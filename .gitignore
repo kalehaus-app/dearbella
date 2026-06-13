@@ -1,0 +1,46 @@
+# Xcode
+#
+# gitignore contributors: remember to update Global/Xcode.gitignore, Global/macOS.gitignore too!
+
+## User settings
+xcuserdata/
+*.xcuserstate
+
+## Obj-C/Swift specific
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## Build generated
+build/
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+
+## Various settings
+*.xccheckout
+*.xcscmblueprint
+
+## Swift Package Manager
+.build/
+.swiftpm/
+
+## CocoaPods (in case added later)
+Pods/
+
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+## Secrets — never commit API keys (TMDB, AI, etc.)
+Secrets.xcconfig
+*.env
