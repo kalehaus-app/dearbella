@@ -54,7 +54,21 @@ struct ChatView: View {
                     ForEach(vm.entries) { entry in
                         entryView(entry).id(entry.id)
                     }
-                    if vm.isLoading { thinkingRow.id("loading") }
+                    if vm.isLoading {
+                        thinkingRow.id("loading")
+                    } else {
+                        // Mood/feeling pills flow under the latest bubble (not
+                        // pinned to the bottom), so short conversations don't
+                        // leave a big empty gap.
+                        switch vm.phase {
+                        case .mood:
+                            pillsRow(vm.moodOptions) { vm.pickMood($0) }
+                        case .feeling:
+                            pillsRow(vm.feelingOptions) { vm.pickFeeling($0) }
+                        case .results, .refine:
+                            EmptyView()
+                        }
+                    }
                 }
                 .padding(16)
             }
@@ -105,25 +119,25 @@ struct ChatView: View {
 
     @ViewBuilder
     private var inputArea: some View {
-        Group {
-            if vm.isLoading {
+        if !vm.isLoading {
+            switch vm.phase {
+            case .refine:
+                bottomBar { refineRow }
+            case .results:
+                if vm.hasResults { bottomBar { resultsControls } }
+            case .mood, .feeling:
+                // Pills now live in the scrollable transcript, so the bottom
+                // bar renders nothing here (no empty strip).
                 EmptyView()
-            } else {
-                switch vm.phase {
-                case .mood:
-                    pillsRow(vm.moodOptions) { vm.pickMood($0) }
-                case .feeling:
-                    pillsRow(vm.feelingOptions) { vm.pickFeeling($0) }
-                case .refine:
-                    refineRow
-                case .results:
-                    if vm.hasResults { resultsControls }
-                }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Theme.background)
+    }
+
+    private func bottomBar<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Theme.background)
     }
 
     private func pillsRow(_ options: [String], action: @escaping (String) -> Void) -> some View {
