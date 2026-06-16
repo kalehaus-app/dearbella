@@ -9,7 +9,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if store.hasCompletedOnboarding {
-                HomePlaceholderView()
+                HomeView()
             } else {
                 OnboardingFlowView()
             }

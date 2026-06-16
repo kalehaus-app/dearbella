@@ -9,8 +9,8 @@ struct GenreSelectionView: View {
     @State private var searchText = ""
 
     private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
+        GridItem(.flexible(), spacing: 14),
+        GridItem(.flexible(), spacing: 14)
     ]
 
     private var filteredGenres: [Genre] {
@@ -32,13 +32,13 @@ struct GenreSelectionView: View {
                 .padding(.horizontal, 20)
 
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 12) {
+                LazyVGrid(columns: columns, spacing: 14) {
                     ForEach(filteredGenres) { genre in
                         SelectableCard(
                             title: genre.name,
                             seed: genre.id,
                             isSelected: store.isGenreSelected(genre.id),
-                            aspectRatio: 1.1
+                            aspectRatio: 0.85
                         ) {
                             store.toggleGenre(genre.id)
                         }

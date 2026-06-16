@@ -10,9 +10,8 @@ struct FilmSelectionView: View {
     @State private var searchText = ""
 
     private let columns = [
-        GridItem(.flexible(), spacing: 10),
-        GridItem(.flexible(), spacing: 10),
-        GridItem(.flexible(), spacing: 10)
+        GridItem(.flexible(), spacing: 14),
+        GridItem(.flexible(), spacing: 14)
     ]
 
     private var filteredFilms: [SampleFilm] {
@@ -45,7 +44,7 @@ struct FilmSelectionView: View {
                 .padding(.horizontal, 20)
 
             ScrollView {
-                LazyVGrid(columns: columns, spacing: 10) {
+                LazyVGrid(columns: columns, spacing: 14) {
                     ForEach(filteredFilms) { film in
                         let number = store.filmSelectionNumber(film.id)
                         let isSelected = number != nil
