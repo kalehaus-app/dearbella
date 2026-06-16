@@ -50,4 +50,10 @@ final class WatchlistStore: ObservableObject {
         let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         return URL(string: "https://www.google.com/search?q=\(encoded)")!
     }
+
+    private func persist() {
+        if let data = try? JSONEncoder().encode(films) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
 }
