@@ -9,8 +9,8 @@ enum Theme {
 
     // MARK: - Colors
 
-    /// The near-black background used across the app.
-    static let background = Color(red: 0.04, green: 0.04, blue: 0.05)
+    /// The app's background — true black (#000000) across the main surfaces.
+    static let background = Color.black
 
     /// Slightly lifted surface color for cards sitting on the background.
     static let surface = Color(red: 0.11, green: 0.11, blue: 0.12)
