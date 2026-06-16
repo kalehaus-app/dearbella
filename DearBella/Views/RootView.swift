@@ -27,4 +27,5 @@ struct RootView: View {
     RootView()
         .environmentObject(OnboardingStore())
         .environmentObject(MovieCatalog())
+        .environmentObject(WatchlistStore())
 }

@@ -6,10 +6,18 @@ import Foundation
 /// to placeholder gradients instead of crashing.
 enum Secrets {
     static var tmdbAPIKey: String {
-        let raw = (Bundle.main.object(forInfoDictionaryKey: "TMDBApiKey") as? String) ?? ""
+        value(forKey: "TMDBApiKey")
+    }
+
+    static var anthropicAPIKey: String {
+        value(forKey: "ClaudeApiKey")
+    }
+
+    private static func value(forKey key: String) -> String {
+        let raw = (Bundle.main.object(forInfoDictionaryKey: key) as? String) ?? ""
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        // If the build-setting substitution didn't run, the value is still the
-        // literal "$(TMDB_API_KEY)" — treat that as no key.
+        // If build-setting substitution didn't run, the value is still the
+        // literal "$(...)" — treat that as no key.
         return trimmed.contains("$(") ? "" : trimmed
     }
 }

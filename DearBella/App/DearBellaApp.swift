@@ -10,12 +10,14 @@ import SwiftUI
 struct DearBellaApp: App {
     @StateObject private var onboardingStore = OnboardingStore()
     @StateObject private var movieCatalog = MovieCatalog()
+    @StateObject private var watchlistStore = WatchlistStore()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(onboardingStore)
                 .environmentObject(movieCatalog)
+                .environmentObject(watchlistStore)
         }
     }
 }

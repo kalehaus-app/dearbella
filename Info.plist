@@ -6,6 +6,10 @@
 	<key>TMDBApiKey</key>
 	<string>$(TMDB_API_KEY)</string>
 
+	<!-- Anthropic (Claude) API key, substituted from Secrets.xcconfig. -->
+	<key>ClaudeApiKey</key>
+	<string>$(ANTHROPIC_API_KEY)</string>
+
 	<!-- Standard bundle keys (filled from build settings). -->
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>

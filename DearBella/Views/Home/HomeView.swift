@@ -9,18 +9,31 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var store: OnboardingStore
     @EnvironmentObject private var catalog: MovieCatalog
+    @EnvironmentObject private var watchlist: WatchlistStore
+    @StateObject private var feed = HomeFeedModel()
     @State private var showComingSoon = false
+    @State private var showChat = false
 
     private let twoColumns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12)
     ]
 
+    /// The user's saved genres + top films, used to personalize Claude calls.
+    private var tasteContext: TasteContext {
+        let genreNames = SampleData.genres
+            .filter { store.selectedGenreIDs.contains($0.id) }
+            .map(\.name)
+        let filmTitles = store.selectedFilms.map(\.title)
+        return TasteContext(genres: genreNames, topFilms: filmTitles)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 header
                 curatedSection
+                myListSection
                 watchTonightPanel
                 vibeSection
                 thingsToDoSection
@@ -30,6 +43,13 @@ struct HomeView: View {
             .padding(.bottom, 40)
         }
         .background(Theme.background.ignoresSafeArea())
+        .fullScreenCover(isPresented: $showChat) {
+            ChatView(context: tasteContext)
+                .environmentObject(watchlist)
+        }
+        .task {
+            await feed.loadCuratedIfNeeded(context: tasteContext)
+        }
         .alert("Coming soon", isPresented: $showComingSoon) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -64,15 +84,59 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(text: "Curated for you")
             LazyVGrid(columns: twoColumns, spacing: 12) {
-                ForEach(HomeContent.curated) { item in
-                    Button { showComingSoon = true } label: {
-                        CaptionCard(
-                            caption: item.caption,
-                            seed: item.seed,
-                            posterPath: catalog.posterPath(filmID: item.filmID)
-                        )
+                if feed.curatedCards.isEmpty {
+                    // Built-in fallback until Claude's personalized cards load.
+                    ForEach(HomeContent.curated) { item in
+                        Button { showComingSoon = true } label: {
+                            CaptionCard(
+                                caption: item.caption,
+                                seed: item.seed,
+                                posterPath: catalog.posterPath(filmID: item.filmID)
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                } else {
+                    ForEach(feed.curatedCards) { card in
+                        Button { showChat = true } label: {
+                            CaptionCard(
+                                caption: card.caption,
+                                seed: card.caption,
+                                posterPath: card.posterPath
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - My List
+
+    @ViewBuilder
+    private var myListSection: some View {
+        if !watchlist.films.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionTitle(text: "My List")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(watchlist.films) { film in
+                            Link(destination: WatchlistStore.watchURL(for: film)) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    PosterImage(posterPath: film.posterPath, seed: film.title)
+                                        .frame(width: 110, height: 165)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    Text(film.title)
+                                        .font(.caption)
+                                        .foregroundStyle(.white)
+                                        .lineLimit(1)
+                                        .frame(width: 110, alignment: .leading)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
             }
         }
@@ -81,7 +145,7 @@ struct HomeView: View {
     // MARK: - What should I watch tonight?
 
     private var watchTonightPanel: some View {
-        Button { showComingSoon = true } label: {
+        Button { showChat = true } label: {
             ZStack(alignment: .bottomTrailing) {
                 Text("What should I\nwatch tonight?")
                     .font(.system(size: 30, weight: .bold))
@@ -181,4 +245,5 @@ struct HomeView: View {
     HomeView()
         .environmentObject(OnboardingStore())
         .environmentObject(MovieCatalog())
+        .environmentObject(WatchlistStore())
 }
