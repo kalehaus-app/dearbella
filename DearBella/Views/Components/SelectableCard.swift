@@ -16,7 +16,14 @@ struct SelectableCard: View {
     var badge: String? = nil
     /// Width-to-height ratio. ~1.1 for genre tiles, ~0.66 for tall posters.
     var aspectRatio: CGFloat = 1.0
+    /// How loud the title is. Genres use `.prominent` for at-a-glance reading.
+    var titleProminence: TitleProminence = .standard
     let action: () -> Void
+
+    enum TitleProminence {
+        case standard
+        case prominent
+    }
 
     var body: some View {
         Button(action: action) {
@@ -36,13 +43,9 @@ struct SelectableCard: View {
         ZStack(alignment: .topLeading) {
             PosterImage(posterPath: posterPath, seed: seed)
 
-            // Darken the top so the top-left title stays legible over bright
-            // poster art, and the bottom for general contrast.
-            LinearGradient(
-                colors: [.black.opacity(0.55), .clear],
-                startPoint: .top,
-                endPoint: .center
-            )
+            // Scrims darken the art so the title stays legible. Genres use a
+            // stronger top scrim so the name reads instantly at a glance.
+            topScrim
             LinearGradient(
                 colors: [.clear, .black.opacity(0.5)],
                 startPoint: .center,
@@ -50,10 +53,10 @@ struct SelectableCard: View {
             )
 
             Text(title)
-                .font(.headline.weight(.semibold))
+                .font(titleFont)
                 .foregroundStyle(.white)
-                .shadow(radius: 3)
-                .padding(10)
+                .shadow(color: .black.opacity(0.7), radius: 4)
+                .padding(titlePadding)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
             if isSelected {
@@ -61,6 +64,39 @@ struct SelectableCard: View {
                     .padding(8)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
+        }
+    }
+
+    private var titleFont: Font {
+        switch titleProminence {
+        case .standard: return .headline.weight(.semibold)
+        case .prominent: return .system(size: 24, weight: .heavy)
+        }
+    }
+
+    private var titlePadding: CGFloat {
+        switch titleProminence {
+        case .standard: return 10
+        case .prominent: return 12
+        }
+    }
+
+    /// The top darkening gradient — heavier for prominent (genre) labels.
+    @ViewBuilder
+    private var topScrim: some View {
+        switch titleProminence {
+        case .standard:
+            LinearGradient(
+                colors: [.black.opacity(0.55), .clear],
+                startPoint: .top,
+                endPoint: .center
+            )
+        case .prominent:
+            LinearGradient(
+                colors: [.black.opacity(0.85), .black.opacity(0.35), .clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
         }
     }
 
