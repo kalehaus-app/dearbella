@@ -29,6 +29,9 @@ final class MovieCatalog: ObservableObject {
 
     /// Fetches posters for any curated films we don't already have cached.
     func loadPostersIfNeeded() async {
+        #if DEBUG
+        print("[DearBella] TMDB API key present: \(client.hasAPIKey)")
+        #endif
         guard client.hasAPIKey else { return }
 
         let missing = SampleData.films.filter { posterPaths[$0.id] == nil }
@@ -53,6 +56,10 @@ final class MovieCatalog: ObservableObject {
             }
             return found
         }
+
+        #if DEBUG
+        print("[DearBella] Resolved \(resolved.count)/\(missing.count) posters from TMDB")
+        #endif
 
         posterPaths.merge(resolved) { _, new in new }
         persist()
