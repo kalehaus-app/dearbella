@@ -8,6 +8,7 @@ import SwiftUI
 /// shows a "coming soon" note. We wire the chat up for real in Step 5.
 struct HomeView: View {
     @EnvironmentObject private var store: OnboardingStore
+    @EnvironmentObject private var catalog: MovieCatalog
     @State private var showComingSoon = false
 
     private let twoColumns = [
@@ -65,7 +66,11 @@ struct HomeView: View {
             LazyVGrid(columns: twoColumns, spacing: 12) {
                 ForEach(HomeContent.curated) { item in
                     Button { showComingSoon = true } label: {
-                        CaptionCard(caption: item.caption, seed: item.seed)
+                        CaptionCard(
+                            caption: item.caption,
+                            seed: item.seed,
+                            posterPath: catalog.posterPath(filmID: item.filmID)
+                        )
                     }
                     .buttonStyle(.plain)
                 }
@@ -124,7 +129,11 @@ struct HomeView: View {
             LazyVGrid(columns: twoColumns, spacing: 12) {
                 ForEach(HomeContent.thingsToDo) { item in
                     Button { showComingSoon = true } label: {
-                        CaptionCard(caption: item.caption, seed: item.seed)
+                        CaptionCard(
+                            caption: item.caption,
+                            seed: item.seed,
+                            posterPath: catalog.posterPath(filmID: item.filmID)
+                        )
                     }
                     .buttonStyle(.plain)
                 }
@@ -171,4 +180,5 @@ struct HomeView: View {
 #Preview {
     HomeView()
         .environmentObject(OnboardingStore())
+        .environmentObject(MovieCatalog())
 }

@@ -5,6 +5,7 @@ import SwiftUI
 /// at 5; unpicked tiles dim once the cap is reached.
 struct FilmSelectionView: View {
     @EnvironmentObject private var store: OnboardingStore
+    @EnvironmentObject private var catalog: MovieCatalog
     let onContinue: () -> Void
 
     @State private var searchText = ""
@@ -53,6 +54,7 @@ struct FilmSelectionView: View {
                         SelectableCard(
                             title: film.title,
                             seed: film.id,
+                            posterPath: catalog.posterPath(filmID: film.id),
                             isSelected: isSelected,
                             badge: number.map(String.init),
                             aspectRatio: 0.66
@@ -91,4 +93,5 @@ struct FilmSelectionView: View {
 #Preview {
     FilmSelectionView(onContinue: {})
         .environmentObject(OnboardingStore())
+        .environmentObject(MovieCatalog())
 }

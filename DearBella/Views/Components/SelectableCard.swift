@@ -9,6 +9,8 @@ struct SelectableCard: View {
     let title: String
     /// Seed for the placeholder gradient (we pass the item's id).
     let seed: String
+    /// Optional TMDB poster path; falls back to the gradient while absent.
+    var posterPath: String? = nil
     let isSelected: Bool
     /// Optional order number ("1"–"5") shown for film picks.
     var badge: String? = nil
@@ -32,7 +34,7 @@ struct SelectableCard: View {
 
     private var cardContent: some View {
         ZStack(alignment: .topLeading) {
-            PlaceholderArt.gradient(for: seed)
+            PosterImage(posterPath: posterPath, seed: seed)
 
             // Darken the bottom so titles stay legible.
             LinearGradient(

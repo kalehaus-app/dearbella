@@ -8,6 +8,8 @@
 
 /* Begin PBXFileReference section */
 		100000000000000000000A5 /* DearBella.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DearBella.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		100000000000000000000C1 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		100000000000000000000C2 /* Secrets.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.example.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,9 +34,19 @@
 		100000000000000000000A2 = {
 			isa = PBXGroup;
 			children = (
+				100000000000000000000C3 /* Config */,
 				100000000000000000000A6 /* DearBella */,
 				100000000000000000000A3 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		100000000000000000000C3 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000C1 /* Secrets.xcconfig */,
+				100000000000000000000C2 /* Secrets.example.xcconfig */,
+			);
+			name = Config;
 			sourceTree = "<group>";
 		};
 		100000000000000000000A3 /* Products */ = {
@@ -124,6 +136,7 @@
 /* Begin XCBuildConfiguration section */
 		100000000000000000000B2 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 100000000000000000000C1 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -187,6 +200,7 @@
 		};
 		100000000000000000000B3 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 100000000000000000000C1 /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -245,6 +259,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_KEY_TMDBApiKey = "$(TMDB_API_KEY)";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -273,6 +288,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_KEY_TMDBApiKey = "$(TMDB_API_KEY)";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

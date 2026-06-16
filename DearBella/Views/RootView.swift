@@ -5,6 +5,7 @@ import SwiftUI
 /// onboarding flips the screen automatically.
 struct RootView: View {
     @EnvironmentObject private var store: OnboardingStore
+    @EnvironmentObject private var catalog: MovieCatalog
 
     var body: some View {
         Group {
@@ -15,10 +16,15 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut, value: store.hasCompletedOnboarding)
+        .task {
+            // Fetch real TMDB posters for the curated films once on launch.
+            await catalog.loadPostersIfNeeded()
+        }
     }
 }
 
 #Preview {
     RootView()
         .environmentObject(OnboardingStore())
+        .environmentObject(MovieCatalog())
 }

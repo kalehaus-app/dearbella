@@ -4,6 +4,7 @@ import SwiftUI
 /// films fan out with a spring animation, then "Continue" finishes onboarding.
 struct GreatPicksView: View {
     @EnvironmentObject private var store: OnboardingStore
+    @EnvironmentObject private var catalog: MovieCatalog
     let onFinished: () -> Void
 
     @State private var revealed = false
@@ -54,7 +55,7 @@ struct GreatPicksView: View {
                     .frame(width: 76, height: 116)
                     .overlay {
                         ZStack(alignment: .bottomLeading) {
-                            PlaceholderArt.gradient(for: film.id)
+                            PosterImage(posterPath: catalog.posterPath(filmID: film.id), seed: film.id)
                             Text(film.title)
                                 .font(.system(size: 8, weight: .semibold))
                                 .foregroundStyle(.white)
@@ -76,4 +77,5 @@ struct GreatPicksView: View {
 #Preview {
     GreatPicksView(onFinished: {})
         .environmentObject(OnboardingStore())
+        .environmentObject(MovieCatalog())
 }

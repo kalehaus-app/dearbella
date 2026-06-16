@@ -4,6 +4,7 @@ import SwiftUI
 /// grid of multi-select tiles. Continue unlocks once at least one is picked.
 struct GenreSelectionView: View {
     @EnvironmentObject private var store: OnboardingStore
+    @EnvironmentObject private var catalog: MovieCatalog
     let onContinue: () -> Void
 
     @State private var searchText = ""
@@ -37,6 +38,7 @@ struct GenreSelectionView: View {
                         SelectableCard(
                             title: genre.name,
                             seed: genre.id,
+                            posterPath: catalog.posterPath(filmID: GenreArt.filmID(for: genre.id)),
                             isSelected: store.isGenreSelected(genre.id),
                             aspectRatio: 0.85
                         ) {
@@ -73,4 +75,5 @@ struct GenreSelectionView: View {
 #Preview {
     GenreSelectionView(onContinue: {})
         .environmentObject(OnboardingStore())
+        .environmentObject(MovieCatalog())
 }

@@ -6,6 +6,7 @@ import SwiftUI
 struct CaptionCard: View {
     let caption: String
     let seed: String
+    var posterPath: String? = nil
     var aspectRatio: CGFloat = 1.5
 
     var body: some View {
@@ -13,7 +14,7 @@ struct CaptionCard: View {
             .aspectRatio(aspectRatio, contentMode: .fit)
             .overlay {
                 ZStack(alignment: .topLeading) {
-                    PlaceholderArt.gradient(for: seed)
+                    PosterImage(posterPath: posterPath, seed: seed)
                     LinearGradient(
                         colors: [.black.opacity(0.05), .black.opacity(0.55)],
                         startPoint: .top,

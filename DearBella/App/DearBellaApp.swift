@@ -9,11 +9,13 @@ import SwiftUI
 @main
 struct DearBellaApp: App {
     @StateObject private var onboardingStore = OnboardingStore()
+    @StateObject private var movieCatalog = MovieCatalog()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(onboardingStore)
+                .environmentObject(movieCatalog)
         }
     }
 }
