@@ -77,4 +77,5 @@ struct IntroCarouselView: View {
 
 #Preview {
     IntroCarouselView(onFinished: {})
+        .environmentObject(MovieCatalog())
 }

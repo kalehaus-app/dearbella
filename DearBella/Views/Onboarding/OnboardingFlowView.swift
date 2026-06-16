@@ -56,4 +56,5 @@ struct OnboardingFlowView: View {
 #Preview {
     OnboardingFlowView()
         .environmentObject(OnboardingStore())
+        .environmentObject(MovieCatalog())
 }

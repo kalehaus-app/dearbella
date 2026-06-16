@@ -36,9 +36,15 @@ struct SelectableCard: View {
         ZStack(alignment: .topLeading) {
             PosterImage(posterPath: posterPath, seed: seed)
 
-            // Darken the bottom so titles stay legible.
+            // Darken the top so the top-left title stays legible over bright
+            // poster art, and the bottom for general contrast.
             LinearGradient(
-                colors: [.clear, .black.opacity(0.55)],
+                colors: [.black.opacity(0.55), .clear],
+                startPoint: .top,
+                endPoint: .center
+            )
+            LinearGradient(
+                colors: [.clear, .black.opacity(0.5)],
                 startPoint: .center,
                 endPoint: .bottom
             )

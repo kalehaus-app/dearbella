@@ -7,8 +7,8 @@ enum GenreArt {
     private static let representative: [String: String] = [
         "horror": "the-shining",
         "comedy": "grand-budapest",
-        "rom-com": "la-la-land",
-        "sci-fi": "blade-runner",
+        "rom-com": "the-proposal",
+        "sci-fi": "interstellar",
         "indie": "lady-bird",
         "drama": "moonlight",
         "superhero": "mad-max",

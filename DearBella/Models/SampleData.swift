@@ -49,5 +49,9 @@ enum SampleData {
         SampleFilm(id: "social-network", title: "The Social Network", year: 2010),
         SampleFilm(id: "mad-max", title: "Mad Max: Fury Road", year: 2015),
         SampleFilm(id: "la-la-land", title: "La La Land", year: 2016),
+        SampleFilm(id: "the-proposal", title: "The Proposal", year: 2009),
+        SampleFilm(id: "interstellar", title: "Interstellar", year: 2014),
+        SampleFilm(id: "it", title: "It", year: 2017),
+        SampleFilm(id: "kill-bill", title: "Kill Bill: Vol. 1", year: 2003),
     ]
 }
