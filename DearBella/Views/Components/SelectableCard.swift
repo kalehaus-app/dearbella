@@ -2,9 +2,10 @@ import SwiftUI
 
 /// A rounded poster-style card used in both the genre and film grids.
 ///
-/// Shows a placeholder gradient with the title in the top-left. When selected
-/// it gains an accent border and a marker in the top-right — either a check
-/// (genres) or a numbered badge showing pick order (films).
+/// Two label styles:
+/// - `.standard` (films): subtle title in the top-left over light scrims.
+/// - `.prominent` (genres): a bold genre name in a solid dark caption bar
+///   across the bottom — guaranteed readable, never clipped by the tile edge.
 struct SelectableCard: View {
     let title: String
     /// Seed for the placeholder gradient (we pass the item's id).
@@ -14,9 +15,9 @@ struct SelectableCard: View {
     let isSelected: Bool
     /// Optional order number ("1"–"5") shown for film picks.
     var badge: String? = nil
-    /// Width-to-height ratio. ~1.1 for genre tiles, ~0.66 for tall posters.
+    /// Width-to-height ratio. ~0.85 for genre tiles, ~0.66 for tall posters.
     var aspectRatio: CGFloat = 1.0
-    /// How loud the title is. Genres use `.prominent` for at-a-glance reading.
+    /// How the title is presented. Genres use `.prominent`.
     var titleProminence: TitleProminence = .standard
     let action: () -> Void
 
@@ -40,25 +41,13 @@ struct SelectableCard: View {
     }
 
     private var cardContent: some View {
-        ZStack(alignment: .topLeading) {
+        ZStack {
             PosterImage(posterPath: posterPath, seed: seed)
 
-            // Scrims darken the art so the title stays legible. Genres use a
-            // stronger top scrim so the name reads instantly at a glance.
-            topScrim
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.5)],
-                startPoint: .center,
-                endPoint: .bottom
-            )
-
-            Text(title)
-                .font(titleFont)
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.7), radius: 4)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(titleInsets)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            switch titleProminence {
+            case .standard: standardLabel
+            case .prominent: prominentLabel
+            }
 
             if isSelected {
                 selectionMarker
@@ -68,38 +57,45 @@ struct SelectableCard: View {
         }
     }
 
-    private var titleFont: Font {
-        switch titleProminence {
-        case .standard: return .headline.weight(.semibold)
-        case .prominent: return .system(size: 24, weight: .heavy)
-        }
-    }
-
-    private var titleInsets: EdgeInsets {
-        switch titleProminence {
-        // Prominent labels use a big heavy font, which needs extra headroom up
-        // top so the glyphs aren't clipped by the tile edge.
-        case .standard: return EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
-        case .prominent: return EdgeInsets(top: 18, leading: 12, bottom: 12, trailing: 12)
-        }
-    }
-
-    /// The top darkening gradient — heavier for prominent (genre) labels.
-    @ViewBuilder
-    private var topScrim: some View {
-        switch titleProminence {
-        case .standard:
+    /// Film tiles: title in the top-left over soft scrims.
+    private var standardLabel: some View {
+        ZStack(alignment: .topLeading) {
             LinearGradient(
                 colors: [.black.opacity(0.55), .clear],
                 startPoint: .top,
                 endPoint: .center
             )
-        case .prominent:
             LinearGradient(
-                colors: [.black.opacity(0.85), .black.opacity(0.35), .clear],
-                startPoint: .top,
+                colors: [.clear, .black.opacity(0.5)],
+                startPoint: .center,
                 endPoint: .bottom
             )
+            Text(title)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.white)
+                .shadow(radius: 3)
+                .padding(10)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    /// Genre tiles: a solid dark caption bar across the bottom. The name is big
+    /// and bold, shrinks to fit on one line, and can't clip the tile edge.
+    private var prominentLabel: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            HStack(spacing: 0) {
+                Text(title)
+                    .font(.system(size: 22, weight: .heavy))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 11)
+            .frame(maxWidth: .infinity)
+            .background(.black.opacity(0.72))
         }
     }
 
