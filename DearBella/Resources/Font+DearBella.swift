@@ -58,7 +58,7 @@ extension Font {
     static let dearBellaTitle = Font.dmSerif(40, relativeTo: .largeTitle)
 
     /// Section headers — "Curated for you", "My List". (DM Serif Display, medium)
-    static let dearBellaSectionHeader = Font.dmSerif(24, relativeTo: .title)
+    static let dearBellaSectionHeader = Font.dmSerif(28, relativeTo: .title)
 
     /// Default body / UI text — movie titles, blurbs, messages. (Inter)
     static let dearBellaBody = Font.inter(17, weight: .regular, relativeTo: .body)

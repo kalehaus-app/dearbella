@@ -62,7 +62,7 @@ struct HomeView: View {
     private var header: some View {
         HStack {
             Text("Dear Bella")
-                .font(.dearBellaTitle)
+                .font(.dmSerif(32, relativeTo: .title))
                 .foregroundStyle(Theme.textPrimary)
             Spacer()
             Menu {
@@ -128,7 +128,7 @@ struct HomeView: View {
                                         .frame(width: 110, height: 165)
                                         .clipShape(RoundedRectangle(cornerRadius: 12))
                                     Text(film.title)
-                                        .font(.caption)
+                                        .font(.dearBellaCaption)
                                         .foregroundStyle(.white)
                                         .lineLimit(1)
                                         .frame(width: 110, alignment: .leading)
@@ -148,12 +148,12 @@ struct HomeView: View {
         Button { showChat = true } label: {
             ZStack(alignment: .bottomTrailing) {
                 Text("What should I\nwatch tonight?")
-                    .font(.system(size: 30, weight: .bold))
+                    .font(.inter(30, weight: .bold, relativeTo: .largeTitle))
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
                 Text("Start Chat")
-                    .font(.subheadline.weight(.bold))
+                    .font(.dearBellaButton)
                     .foregroundStyle(.black)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
@@ -211,23 +211,23 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text("Film Fact")
-                    .font(.caption.bold())
+                    .font(.dearBellaCaption)
                     .foregroundStyle(.white.opacity(0.85))
                 Spacer()
                 Button { showComingSoon = true } label: {
                     Text("Share")
-                        .font(.caption.bold())
+                        .font(.dearBellaCaption)
                         .foregroundStyle(.white.opacity(0.85))
                 }
                 .buttonStyle(.plain)
             }
 
             Text(HomeContent.fact.headline)
-                .font(.system(size: 26, weight: .heavy))
+                .font(.inter(26, weight: .heavy, relativeTo: .largeTitle))
                 .foregroundStyle(.white)
 
             Text(HomeContent.fact.highlight)
-                .font(.system(size: 26, weight: .heavy))
+                .font(.inter(26, weight: .heavy, relativeTo: .largeTitle))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)

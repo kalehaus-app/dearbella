@@ -21,7 +21,7 @@ struct CaptionCard: View {
                         endPoint: .bottom
                     )
                     Text(caption)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.dearBellaBody)
                         .foregroundStyle(.white)
                         .shadow(radius: 3)
                         .padding(12)
@@ -38,7 +38,7 @@ struct SectionTitle: View {
 
     var body: some View {
         Text(text)
-            .font(.title3.bold())
+            .font(.dearBellaSectionHeader)
             .foregroundStyle(Theme.textPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
