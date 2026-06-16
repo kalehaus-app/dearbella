@@ -137,15 +137,19 @@ struct ChatView: View {
     }
 
     private var resultsControls: some View {
-        HStack(spacing: 10) {
-            PillButton(title: "Not feeling it") {
-                vm.askForReference()
-                refineFocused = true
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                PillButton(title: "Not feeling it") {
+                    vm.askForReference()
+                    refineFocused = true
+                }
+                PillButton(title: "More like these") {
+                    vm.moreSuggestions()
+                }
+                PillButton(title: "Found it! 🎉") {
+                    dismiss()
+                }
             }
-            PillButton(title: "More like these") {
-                vm.moreSuggestions()
-            }
-            Spacer()
         }
     }
 
