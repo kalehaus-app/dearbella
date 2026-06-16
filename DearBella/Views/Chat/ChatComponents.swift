@@ -8,7 +8,7 @@ struct PillButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .font(.body.weight(.semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
@@ -26,7 +26,8 @@ struct BellaBubble: View {
 
     var body: some View {
         Text(text)
-            .font(.subheadline)
+            .font(.title3)
+            .lineSpacing(4)
             .foregroundStyle(.white)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -42,7 +43,8 @@ struct UserBubble: View {
 
     var body: some View {
         Text(text)
-            .font(.subheadline)
+            .font(.title3)
+            .lineSpacing(4)
             .foregroundStyle(.white)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -67,11 +69,12 @@ struct PickCard: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(film.year != nil ? "\(film.title) (\(film.year!))" : film.title)
-                    .font(.subheadline.bold())
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
 
                 Text(film.reason)
-                    .font(.caption)
+                    .font(.body)
+                    .lineSpacing(3)
                     .foregroundStyle(Theme.textSecondary)
 
                 HStack(spacing: 12) {
