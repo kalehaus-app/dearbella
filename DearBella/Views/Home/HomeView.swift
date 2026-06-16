@@ -32,10 +32,10 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 header
-                curatedSection
-                myListSection
                 watchTonightPanel
+                curatedSection
                 vibeSection
+                myListSection
                 thingsToDoSection
                 filmFactCard
             }
