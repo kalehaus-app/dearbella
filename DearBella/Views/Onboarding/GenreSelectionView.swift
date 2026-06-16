@@ -40,7 +40,7 @@ struct GenreSelectionView: View {
                             seed: genre.id,
                             posterPath: catalog.posterPath(filmID: GenreArt.filmID(for: genre.id)),
                             isSelected: store.isGenreSelected(genre.id),
-                            aspectRatio: 0.85,
+                            aspectRatio: 0.8,
                             titleProminence: .prominent
                         ) {
                             store.toggleGenre(genre.id)
