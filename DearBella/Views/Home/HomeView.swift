@@ -62,7 +62,7 @@ struct HomeView: View {
     private var header: some View {
         HStack {
             Text("Dear Bella")
-                .font(.title2.bold())
+                .font(.dearBellaTitle)
                 .foregroundStyle(Theme.textPrimary)
             Spacer()
             Menu {

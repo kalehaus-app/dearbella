@@ -30,7 +30,7 @@ struct ChatView: View {
     private var header: some View {
         HStack {
             Text("Dear Bella")
-                .font(.title3.bold())
+                .font(.dearBellaTitle)
                 .foregroundStyle(Theme.textPrimary)
             Spacer()
             Button {
