@@ -56,7 +56,8 @@ struct SelectableCard: View {
                 .font(titleFont)
                 .foregroundStyle(.white)
                 .shadow(color: .black.opacity(0.7), radius: 4)
-                .padding(titlePadding)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(titleInsets)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
             if isSelected {
@@ -74,10 +75,12 @@ struct SelectableCard: View {
         }
     }
 
-    private var titlePadding: CGFloat {
+    private var titleInsets: EdgeInsets {
         switch titleProminence {
-        case .standard: return 10
-        case .prominent: return 12
+        // Prominent labels use a big heavy font, which needs extra headroom up
+        // top so the glyphs aren't clipped by the tile edge.
+        case .standard: return EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
+        case .prominent: return EdgeInsets(top: 18, leading: 12, bottom: 12, trailing: 12)
         }
     }
 
