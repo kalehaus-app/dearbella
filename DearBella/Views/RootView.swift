@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Top-level router: shows onboarding until it's finished, then the home
-/// screen. Because it watches `OnboardingStore`, completing (or resetting)
-/// onboarding flips the screen automatically.
+/// Top-level router: shows onboarding until it's finished, then the main app
+/// (a tab bar that defaults to Home). Because it watches `OnboardingStore`,
+/// completing (or resetting) onboarding flips the screen automatically.
 struct RootView: View {
     @EnvironmentObject private var store: OnboardingStore
     @EnvironmentObject private var catalog: MovieCatalog
@@ -10,7 +10,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if store.hasCompletedOnboarding {
-                HomeView()
+                MainTabView()
             } else {
                 OnboardingFlowView()
             }
