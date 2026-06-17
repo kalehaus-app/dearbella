@@ -9,8 +9,8 @@ final class CollectionViewModel: ObservableObject {
 
     /// Where a collection's films come from.
     enum Source: Equatable {
-        case similarTo(referenceFilm: String)   // free TMDB call
-        case claudeTheme(String)                // paid Claude call
+        case similarTo(referenceFilm: String)        // free TMDB call (currently unused)
+        case claudeTheme(prompt: String, count: Int) // paid Claude call
     }
 
     @Published private(set) var films: [RecommendedFilm] = []
@@ -35,9 +35,9 @@ final class CollectionViewModel: ObservableObject {
                 error = "Couldn't load this collection right now. Try again later."
             }
 
-        case .claudeTheme(let theme):
+        case .claudeTheme(let prompt, let count):
             do {
-                films = try await RecommendationEngine.shared.recommendForTheme(theme).films
+                films = try await RecommendationEngine.shared.recommendForTheme(prompt, count: count).films
                 if films.isEmpty {
                     error = "Couldn't load this collection right now. Try again later."
                 }

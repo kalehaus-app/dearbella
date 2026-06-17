@@ -125,7 +125,7 @@ struct CollectionView: View {
 #Preview {
     CollectionView(
         title: "Tonight's Mood: Dreamy & Disoriented",
-        source: .claudeTheme("Tonight's Mood: Dreamy & Disoriented")
+        source: .claudeTheme(prompt: "dreamy, surreal, disorienting films", count: 6)
     )
     .environmentObject(WatchlistStore())
 }

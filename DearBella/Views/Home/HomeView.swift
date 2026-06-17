@@ -11,13 +11,13 @@ private struct HomeImageTile: Identifiable {
 
     static let curated: [HomeImageTile] = [
         HomeImageTile(image: "dreamy", caption: "Tonight's Mood: Dreamy & Disoriented",
-                      source: .claudeTheme("Tonight's Mood: Dreamy & Disoriented")),
+                      source: .claudeTheme(prompt: "dreamy, surreal, disorienting films", count: 6)),
         HomeImageTile(image: "cinema", caption: "Films you'll love if you like Cinematography",
-                      source: .similarTo(referenceFilm: "Carrie")),
+                      source: .claudeTheme(prompt: "films celebrated for stunning, beautiful cinematography", count: 6)),
         HomeImageTile(image: "gems", caption: "Top 3 Hidden Gems this week",
-                      source: .claudeTheme("Top 3 Hidden Gems this week")),
+                      source: .claudeTheme(prompt: "underrated hidden-gem films", count: 3)),
         HomeImageTile(image: "lovers", caption: "Underrated Lovers Films for you",
-                      source: .claudeTheme("Underrated Lovers Films for you")),
+                      source: .claudeTheme(prompt: "underrated romance / love-story films", count: 6)),
     ]
 
     static let thingsToDo: [HomeImageTile] = [

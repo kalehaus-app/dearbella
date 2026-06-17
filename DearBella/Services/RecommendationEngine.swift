@@ -146,13 +146,13 @@ struct RecommendationEngine {
 
     // MARK: - Themed collection
 
-    /// Curates a set of films for a theme/title (e.g. "Tonight's Mood: Dreamy
-    /// & Disoriented"), reusing the same tool + poster resolution as `recommend`.
-    func recommendForTheme(_ theme: String) async throws -> RecommendationResult {
+    /// Curates a set of films for a theme (e.g. "dreamy, surreal, disorienting
+    /// films"), reusing the same tool + poster resolution as `recommend`.
+    func recommendForTheme(_ theme: String, count: Int) async throws -> RecommendationResult {
         let prompt = """
-        Curate a themed film collection for: "\(theme)".
-        Recommend 6 real films that genuinely fit this theme. One witty sentence
-        per reason.
+        Curate a themed film collection: \(theme).
+        Recommend exactly \(count) real films that genuinely fit this theme. One
+        witty sentence per reason.
         """
 
         let tool = ClaudeTool(
