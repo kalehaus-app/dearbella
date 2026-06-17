@@ -8,6 +8,9 @@ struct SwipeView: View {
     @EnvironmentObject private var watchlist: WatchlistStore
 
     @State private var drag: CGSize = .zero
+    @State private var showReward = false
+    @State private var likeCount = 0                 // drives the success haptic
+    @State private var detailMovie: SwipeMovie?
 
     private let swipeThreshold: CGFloat = 110
 
@@ -17,6 +20,17 @@ struct SwipeView: View {
             content
         }
         .task { await viewModel.loadInitial() }
+        .sensoryFeedback(.success, trigger: likeCount)
+        .overlay(alignment: .top) {
+            if showReward {
+                LikeReward()
+                    .padding(.top, 70)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .fullScreenCover(item: $detailMovie) { movie in
+            MovieDetailView(movie: movie)
+        }
     }
 
     @ViewBuilder
@@ -79,6 +93,7 @@ struct SwipeView: View {
                     SwipeCardView(movie: top, dragWidth: drag.width)
                         .offset(drag)
                         .rotationEffect(.degrees(Double(drag.width / 18)))
+                        .onTapGesture { detailMovie = top }
                         .gesture(dragGesture(for: top))
                         .task(id: top.id) { await viewModel.ensureRuntime(for: top.id) }
                 }
@@ -139,10 +154,21 @@ struct SwipeView: View {
             if liked {
                 watchlist.save(movie.savedFilm)
                 viewModel.like(movie)
+                triggerReward()
             } else {
                 viewModel.pass(movie)
             }
             drag = .zero
+        }
+    }
+
+    /// Brief, non-blocking "added to your list" confirmation + success haptic.
+    private func triggerReward() {
+        likeCount += 1
+        withAnimation(.spring(response: 0.35)) { showReward = true }
+        Task {
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            withAnimation(.easeOut(duration: 0.4)) { showReward = false }
         }
     }
 

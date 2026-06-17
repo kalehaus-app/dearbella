@@ -112,6 +112,39 @@ struct TMDBClient: Sendable {
         }
     }
 
+    /// The YouTube key for a movie's trailer (from `/movie/{id}/videos`), or
+    /// `nil` if there's no YouTube trailer / on failure. Prefers an official
+    /// trailer, then any trailer, then any YouTube clip.
+    func trailerYouTubeKey(id: Int) async -> String? {
+        guard hasAPIKey, var components = URLComponents(string: "\(baseURL)/movie/\(id)/videos") else {
+            return nil
+        }
+        components.queryItems = [URLQueryItem(name: "api_key", value: Secrets.tmdbAPIKey)]
+        guard let url = components.url else { return nil }
+
+        struct Response: Decodable { let results: [Video] }
+        struct Video: Decodable {
+            let key: String
+            let site: String
+            let type: String
+            let official: Bool?
+        }
+
+        do {
+            let (data, response) = try await session.data(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                return nil
+            }
+            let videos = try JSONDecoder().decode(Response.self, from: data).results
+            let youTube = videos.filter { $0.site == "YouTube" }
+            return youTube.first { $0.type == "Trailer" && ($0.official ?? false) }?.key
+                ?? youTube.first { $0.type == "Trailer" }?.key
+                ?? youTube.first?.key
+        } catch {
+            return nil
+        }
+    }
+
     /// Builds a full image URL from a TMDB `poster_path` like "/abc.jpg".
     /// `size` is a TMDB bucket: w185, w342, w500, w780, original…
     static func posterURL(path: String?, size: String = "w500") -> URL? {

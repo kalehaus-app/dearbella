@@ -21,33 +21,6 @@ private struct HomeImageTile: Identifiable {
     ]
 }
 
-/// Home-only "Browse by Vibe" pills (palette colors). Kept separate from the
-/// shared `VibePill` so the onboarding carousel is unaffected.
-private struct HomeVibe: Identifiable {
-    let id = UUID()
-    let name: String
-    let background: Color
-    let textColor: Color
-
-    static let all: [HomeVibe] = [
-        HomeVibe(
-            name: "Sad",
-            background: Color(red: 255 / 255, green: 192 / 255, blue: 223 / 255), // #FFC0DF
-            textColor: Color(red: 26 / 255, green: 26 / 255, blue: 26 / 255)       // #1A1A1A
-        ),
-        HomeVibe(
-            name: "Board",
-            background: Color(red: 170 / 255, green: 242 / 255, blue: 204 / 255),  // #AAF2CC
-            textColor: Color(red: 26 / 255, green: 26 / 255, blue: 26 / 255)       // #1A1A1A
-        ),
-        HomeVibe(
-            name: "Silly",
-            background: Color(red: 1 / 255, green: 100 / 255, blue: 54 / 255),     // #016436
-            textColor: Color(red: 244 / 255, green: 239 / 255, blue: 230 / 255)    // #F4EFE6
-        ),
-    ]
-}
-
 /// The home feed (wireframe Frame 47): curated cards, the blue "What should I
 /// watch tonight?" panel, browse-by-vibe pills, a "Things to do" grid, and the
 /// green film-fact card.
@@ -82,8 +55,7 @@ struct HomeView: View {
                 header
                 watchTonightPanel
                 curatedSection
-                vibeSection
-                myListSection
+                MyListPreview()
                 filmFactCard
             }
             .padding(.horizontal, 20)
@@ -146,33 +118,7 @@ struct HomeView: View {
 
     // MARK: - My List
 
-    @ViewBuilder
-    private var myListSection: some View {
-        if !watchlist.films.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                SectionTitle(text: "My List")
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(watchlist.films) { film in
-                            Link(destination: WatchlistStore.watchURL(for: film)) {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    PosterImage(posterPath: film.posterPath, seed: film.title)
-                                        .frame(width: 110, height: 165)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    Text(film.title)
-                                        .font(.dearBellaCaption)
-                                        .foregroundStyle(.white)
-                                        .lineLimit(1)
-                                        .frame(width: 110, alignment: .leading)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // The dashboard's My List preview is now its own view: `MyListPreview`.
 
     // MARK: - What should I watch tonight?
 
@@ -198,23 +144,6 @@ struct HomeView: View {
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
-    }
-
-    // MARK: - Browse by Vibe
-
-    private var vibeSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionTitle(text: "Browse by Vibe:")
-            HStack(spacing: 10) {
-                ForEach(HomeVibe.all) { vibe in
-                    Button { showComingSoon = true } label: {
-                        HomeVibePill(text: vibe.name, background: vibe.background, textColor: vibe.textColor)
-                    }
-                    .buttonStyle(.plain)
-                }
-                Spacer()
-            }
-        }
     }
 
     // MARK: - Film fact
