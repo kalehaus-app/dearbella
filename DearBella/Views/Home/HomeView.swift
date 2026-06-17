@@ -1,5 +1,27 @@
 import SwiftUI
 
+/// A home-feed image tile: a local catalog image + caption. Backs the two
+/// 2×2 grids ("Curated for you" and "Things to do").
+private struct HomeImageTile: Identifiable {
+    let id = UUID()
+    let image: String
+    let caption: String
+
+    static let curated: [HomeImageTile] = [
+        HomeImageTile(image: "dreamy", caption: "Tonight's Mood: Dreamy & Disoriented"),
+        HomeImageTile(image: "cinema", caption: "Films you'll love if you like Cinematography"),
+        HomeImageTile(image: "gems", caption: "Top 3 Hidden Gems this week"),
+        HomeImageTile(image: "lovers", caption: "Underrated Lovers Films for you"),
+    ]
+
+    static let thingsToDo: [HomeImageTile] = [
+        HomeImageTile(image: "bucket", caption: "Start your film bucket list"),
+        HomeImageTile(image: "cast", caption: "Your Dream Cast"),
+        HomeImageTile(image: "scenes", caption: "Your favorite film scenes"),
+        HomeImageTile(image: "overrated", caption: "Your Overrated List"),
+    ]
+}
+
 /// The home feed (wireframe Frame 47): curated cards, the blue "What should I
 /// watch tonight?" panel, browse-by-vibe pills, a "Things to do" grid, and the
 /// green film-fact card.
@@ -10,7 +32,6 @@ struct HomeView: View {
     @EnvironmentObject private var store: OnboardingStore
     @EnvironmentObject private var catalog: MovieCatalog
     @EnvironmentObject private var watchlist: WatchlistStore
-    @StateObject private var feed = HomeFeedModel()
     @State private var showComingSoon = false
     @State private var showChat = false
 
@@ -47,9 +68,6 @@ struct HomeView: View {
             ChatView(context: tasteContext)
                 .environmentObject(watchlist)
         }
-        .task {
-            await feed.loadCuratedIfNeeded(context: tasteContext)
-        }
         .alert("Coming soon", isPresented: $showComingSoon) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -84,29 +102,11 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(text: "Curated for you")
             LazyVGrid(columns: twoColumns, spacing: 12) {
-                if feed.curatedCards.isEmpty {
-                    // Built-in fallback until Claude's personalized cards load.
-                    ForEach(HomeContent.curated) { item in
-                        Button { showComingSoon = true } label: {
-                            CaptionCard(
-                                caption: item.caption,
-                                seed: item.seed,
-                                posterPath: catalog.posterPath(filmID: item.filmID)
-                            )
-                        }
-                        .buttonStyle(.plain)
+                ForEach(HomeImageTile.curated) { tile in
+                    Button { showComingSoon = true } label: {
+                        ImageTile(imageName: tile.image, caption: tile.caption, captionAtTop: false)
                     }
-                } else {
-                    ForEach(feed.curatedCards) { card in
-                        Button { showChat = true } label: {
-                            CaptionCard(
-                                caption: card.caption,
-                                seed: card.caption,
-                                posterPath: card.posterPath
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -191,13 +191,9 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(text: "Things to do:")
             LazyVGrid(columns: twoColumns, spacing: 12) {
-                ForEach(HomeContent.thingsToDo) { item in
+                ForEach(HomeImageTile.thingsToDo) { tile in
                     Button { showComingSoon = true } label: {
-                        CaptionCard(
-                            caption: item.caption,
-                            seed: item.seed,
-                            posterPath: catalog.posterPath(filmID: item.filmID)
-                        )
+                        ImageTile(imageName: tile.image, caption: tile.caption, captionAtTop: true)
                     }
                     .buttonStyle(.plain)
                 }
