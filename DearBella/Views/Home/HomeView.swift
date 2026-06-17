@@ -19,13 +19,6 @@ private struct HomeImageTile: Identifiable {
         HomeImageTile(image: "lovers", caption: "Underrated Lovers Films for you",
                       source: .claudeTheme(prompt: "underrated romance / love-story films", count: 6)),
     ]
-
-    static let thingsToDo: [HomeImageTile] = [
-        HomeImageTile(image: "bucket", caption: "Start your film bucket list"),
-        HomeImageTile(image: "cast", caption: "Your Dream Cast"),
-        HomeImageTile(image: "scenes", caption: "Your favorite film scenes"),
-        HomeImageTile(image: "overrated", caption: "Your Overrated List"),
-    ]
 }
 
 /// Home-only "Browse by Vibe" pills (palette colors). Kept separate from the
@@ -91,7 +84,6 @@ struct HomeView: View {
                 curatedSection
                 vibeSection
                 myListSection
-                thingsToDoSection
                 filmFactCard
             }
             .padding(.horizontal, 20)
@@ -221,22 +213,6 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                 }
                 Spacer()
-            }
-        }
-    }
-
-    // MARK: - Things to do
-
-    private var thingsToDoSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionTitle(text: "Things to do:")
-            LazyVGrid(columns: twoColumns, spacing: 12) {
-                ForEach(HomeImageTile.thingsToDo) { tile in
-                    Button { showComingSoon = true } label: {
-                        ImageTile(imageName: tile.image, caption: tile.caption, captionAtTop: true)
-                    }
-                    .buttonStyle(.plain)
-                }
             }
         }
     }
