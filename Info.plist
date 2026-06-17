@@ -47,6 +47,10 @@
 	<key>UIUserInterfaceStyle</key>
 	<string>Dark</string>
 
+	<!-- Needed for "Save to Photos" on the monthly recap share card. -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>DearBella saves your monthly recap card to your photo library.</string>
+
 	<!-- Custom fonts (files live in DearBella/Resources/Fonts). -->
 	<key>UIAppFonts</key>
 	<array>

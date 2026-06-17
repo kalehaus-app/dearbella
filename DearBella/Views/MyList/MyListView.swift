@@ -9,6 +9,7 @@ struct MyListView: View {
     @StateObject private var viewModel = MyListViewModel()
 
     @State private var selectedGenre: String?
+    @State private var showShareCard = false
 
     private let columns = [
         GridItem(.flexible(), spacing: 16),
@@ -47,6 +48,7 @@ struct MyListView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
                         header
+                        shareButton
                         TasteInsightSection(viewModel: viewModel, context: tasteContext)
                         if !presentGenres.isEmpty {
                             GenreFilterPills(genres: presentGenres, selected: $selectedGenre)
@@ -64,6 +66,24 @@ struct MyListView: View {
             // so the filter pills populate. No-op once every film has genres.
             await watchlist.backfillGenresIfNeeded()
         }
+        .fullScreenCover(isPresented: $showShareCard) {
+            ShareCardSheet(films: ShareCardData.topTitles(from: watchlist.films))
+        }
+    }
+
+    /// Entry point for the monthly recap share card.
+    private var shareButton: some View {
+        Button { showShareCard = true } label: {
+            Label("Share my month", systemImage: "square.and.arrow.up")
+                .font(.dearBellaButton)
+                .foregroundStyle(Theme.ink)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(Theme.cyan)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 20)
     }
 
     private var header: some View {
