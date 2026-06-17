@@ -30,26 +30,22 @@ func claudeJSONSchema(_ string: String) -> [String: Any] {
     return dictionary
 }
 
-/// Minimal client for Anthropic's Messages API.
-///
-/// There's no official Swift SDK, so we call the REST endpoint directly with
-/// `URLSession` (the documented path for unsupported languages). We force a
-/// single tool call so Claude's reply is always clean structured JSON that we
-/// decode into `Output`.
-///
-/// PRODUCTION: the API key currently ships inside the app. Before a public App
-/// Store release, move these calls behind a small backend proxy that holds the
-/// key, and set a spend limit in the Anthropic Console in the meantime.
+/// Client for our Claude calls. Routes through a Vercel proxy that holds the
+/// Anthropic API key and rebuilds the full Messages API body (model, max_tokens,
+/// thinking, output_config) server-side. We send `system`, `userPrompt`, and the
+/// forced `tool`; the proxy returns the standard Anthropic response (a content
+/// array with a tool_use block), which we decode into `Output`.
 struct ClaudeClient {
     static let shared = ClaudeClient()
 
-    /// Sonnet 4.6 — fast and cost-efficient, ideal for a recommendation chat.
+    /// Sonnet 4.6 — the model the proxy uses (kept here for reference).
     let model = "claude-sonnet-4-6"
 
     private let session = URLSession.shared
-    private let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
+    private let endpoint = URL(string: "https://dearbella-proxy.vercel.app/api/claude")!
 
-    var hasAPIKey: Bool { !Secrets.anthropicAPIKey.isEmpty }
+    /// The proxy holds the key, so Claude is always reachable from the app's side.
+    var hasAPIKey: Bool { true }
 
     /// Sends one request that forces `tool`, then decodes the tool input as `Output`.
     func generate<Output: Decodable>(
@@ -58,25 +54,16 @@ struct ClaudeClient {
         tool: ClaudeTool,
         as outputType: Output.Type
     ) async throws -> Output {
-        guard hasAPIKey else { throw ClaudeError.missingKey }
-
+        // The proxy rebuilds the full Anthropic body server-side.
         let body: [String: Any] = [
-            "model": model,
-            "max_tokens": 1024,
             "system": system,
-            // Thinking off + low effort keeps replies fast and cheap.
-            "thinking": ["type": "disabled"],
-            "output_config": ["effort": "low"],
-            "tools": [tool.asDictionary],
-            "tool_choice": ["type": "tool", "name": tool.name],
-            "messages": [["role": "user", "content": userPrompt]],
+            "userPrompt": userPrompt,
+            "tool": tool.asDictionary,
         ]
 
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(Secrets.anthropicAPIKey, forHTTPHeaderField: "x-api-key")
-        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await session.data(for: request)
