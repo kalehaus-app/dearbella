@@ -55,7 +55,12 @@ final class SwipeDeckViewModel: ObservableObject {
             let unseen = movies
                 .compactMap(SwipeMovie.init(from:))
                 .filter { movie in
-                    !history.hasSeen(movie.id) && !deck.contains { $0.id == movie.id }
+                    // Skip films with no poster — TMDB "popular" includes
+                    // new/upcoming titles that have no poster yet, which would
+                    // otherwise show (and save) as a blank gradient.
+                    movie.posterPath?.isEmpty == false
+                        && !history.hasSeen(movie.id)
+                        && !deck.contains { $0.id == movie.id }
                 }
 
             if !unseen.isEmpty {
