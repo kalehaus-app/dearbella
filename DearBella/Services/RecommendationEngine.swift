@@ -144,6 +144,67 @@ struct RecommendationEngine {
         return cards
     }
 
+    // MARK: - Themed collection
+
+    /// Curates a set of films for a theme/title (e.g. "Tonight's Mood: Dreamy
+    /// & Disoriented"), reusing the same tool + poster resolution as `recommend`.
+    func recommendForTheme(_ theme: String) async throws -> RecommendationResult {
+        let prompt = """
+        Curate a themed film collection for: "\(theme)".
+        Recommend 6 real films that genuinely fit this theme. One witty sentence
+        per reason.
+        """
+
+        let tool = ClaudeTool(
+            name: "present_recommendations",
+            description: "Present a themed collection of film recommendations.",
+            inputSchema: claudeJSONSchema("""
+            {
+              "type": "object",
+              "properties": {
+                "intro": { "type": "string", "description": "A short, witty intro to the collection." },
+                "films": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "title": { "type": "string" },
+                      "year": { "type": "integer" },
+                      "reason": { "type": "string", "description": "One witty, fitting sentence." }
+                    },
+                    "required": ["title", "year", "reason"]
+                  }
+                }
+              },
+              "required": ["intro", "films"]
+            }
+            """)
+        )
+
+        let output = try await claude.generate(
+            system: persona,
+            userPrompt: prompt,
+            tool: tool,
+            as: RecommendationToolInput.self
+        )
+
+        var resolved: [RecommendedFilm] = []
+        for film in output.films {
+            let movie = await tmdb.searchMovie(title: film.title, year: film.year)
+            resolved.append(
+                RecommendedFilm(
+                    title: film.title,
+                    year: film.year,
+                    reason: film.reason,
+                    posterPath: movie?.posterPath,
+                    tmdbID: movie?.id,
+                    genres: movie?.genreNames ?? []
+                )
+            )
+        }
+        return RecommendationResult(intro: output.intro, films: resolved)
+    }
+
     // MARK: - Taste summary
 
     func tasteSummary(context: TasteContext) async throws -> String {

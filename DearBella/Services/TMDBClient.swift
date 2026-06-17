@@ -44,6 +44,29 @@ struct TMDBClient: Sendable {
         }
     }
 
+    /// Movies similar to a given title (TMDB's `/movie/{id}/similar`). Searches
+    /// for the reference title first, then fetches its similar list. Returns an
+    /// empty array on any failure or missing key.
+    func similarMovies(toTitle title: String) async -> [TMDBMovie] {
+        guard hasAPIKey,
+              let match = await searchMovie(title: title, year: nil),
+              var components = URLComponents(string: "\(baseURL)/movie/\(match.id)/similar")
+        else { return [] }
+
+        components.queryItems = [URLQueryItem(name: "api_key", value: Secrets.tmdbAPIKey)]
+        guard let url = components.url else { return [] }
+
+        do {
+            let (data, response) = try await session.data(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                return []
+            }
+            return try JSONDecoder().decode(TMDBSearchResponse.self, from: data).results
+        } catch {
+            return []
+        }
+    }
+
     /// Builds a full image URL from a TMDB `poster_path` like "/abc.jpg".
     /// `size` is a TMDB bucket: w185, w342, w500, w780, original…
     static func posterURL(path: String?, size: String = "w500") -> URL? {

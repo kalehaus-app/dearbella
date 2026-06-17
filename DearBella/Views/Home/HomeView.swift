@@ -6,12 +6,18 @@ private struct HomeImageTile: Identifiable {
     let id = UUID()
     let image: String
     let caption: String
+    /// Where this tile's collection screen sources its films (curated tiles only).
+    var source: CollectionViewModel.Source? = nil
 
     static let curated: [HomeImageTile] = [
-        HomeImageTile(image: "dreamy", caption: "Tonight's Mood: Dreamy & Disoriented"),
-        HomeImageTile(image: "cinema", caption: "Films you'll love if you like Cinematography"),
-        HomeImageTile(image: "gems", caption: "Top 3 Hidden Gems this week"),
-        HomeImageTile(image: "lovers", caption: "Underrated Lovers Films for you"),
+        HomeImageTile(image: "dreamy", caption: "Tonight's Mood: Dreamy & Disoriented",
+                      source: .claudeTheme("Tonight's Mood: Dreamy & Disoriented")),
+        HomeImageTile(image: "cinema", caption: "Films you'll love if you like Cinematography",
+                      source: .similarTo(referenceFilm: "Carrie")),
+        HomeImageTile(image: "gems", caption: "Top 3 Hidden Gems this week",
+                      source: .claudeTheme("Top 3 Hidden Gems this week")),
+        HomeImageTile(image: "lovers", caption: "Underrated Lovers Films for you",
+                      source: .claudeTheme("Underrated Lovers Films for you")),
     ]
 
     static let thingsToDo: [HomeImageTile] = [
@@ -61,6 +67,7 @@ struct HomeView: View {
     @EnvironmentObject private var watchlist: WatchlistStore
     @State private var showComingSoon = false
     @State private var showChat = false
+    @State private var selectedCollection: HomeImageTile?
 
     private let twoColumns = [
         GridItem(.flexible(), spacing: 12),
@@ -94,6 +101,12 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $showChat) {
             ChatView(context: tasteContext)
                 .environmentObject(watchlist)
+        }
+        .fullScreenCover(item: $selectedCollection) { tile in
+            if let source = tile.source {
+                CollectionView(title: tile.caption, source: source)
+                    .environmentObject(watchlist)
+            }
         }
         .alert("Coming soon", isPresented: $showComingSoon) {
             Button("OK", role: .cancel) {}
@@ -130,7 +143,7 @@ struct HomeView: View {
             SectionTitle(text: "Curated for you")
             LazyVGrid(columns: twoColumns, spacing: 12) {
                 ForEach(HomeImageTile.curated) { tile in
-                    Button { showComingSoon = true } label: {
+                    Button { selectedCollection = tile } label: {
                         ImageTile(imageName: tile.image, caption: tile.caption, captionAtTop: false)
                     }
                     .buttonStyle(.plain)
