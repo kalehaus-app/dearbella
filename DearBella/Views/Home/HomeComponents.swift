@@ -80,6 +80,24 @@ struct ImageTile: View {
     }
 }
 
+/// Home-only "Browse by Vibe" pill with explicit background + text colors.
+/// (Separate from the shared `VibePill` so onboarding stays untouched.)
+struct HomeVibePill: View {
+    let text: String
+    let background: Color
+    let textColor: Color
+
+    var body: some View {
+        Text(text)
+            .font(.inter(13, weight: .semibold))
+            .foregroundStyle(textColor)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(background)
+            .clipShape(Capsule())
+    }
+}
+
 /// A simple left-aligned section title used between home-feed sections.
 struct SectionTitle: View {
     let text: String

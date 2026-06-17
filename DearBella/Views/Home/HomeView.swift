@@ -22,6 +22,33 @@ private struct HomeImageTile: Identifiable {
     ]
 }
 
+/// Home-only "Browse by Vibe" pills (palette colors). Kept separate from the
+/// shared `VibePill` so the onboarding carousel is unaffected.
+private struct HomeVibe: Identifiable {
+    let id = UUID()
+    let name: String
+    let background: Color
+    let textColor: Color
+
+    static let all: [HomeVibe] = [
+        HomeVibe(
+            name: "Sad",
+            background: Color(red: 255 / 255, green: 192 / 255, blue: 223 / 255), // #FFC0DF
+            textColor: Color(red: 26 / 255, green: 26 / 255, blue: 26 / 255)       // #1A1A1A
+        ),
+        HomeVibe(
+            name: "Board",
+            background: Color(red: 170 / 255, green: 242 / 255, blue: 204 / 255),  // #AAF2CC
+            textColor: Color(red: 26 / 255, green: 26 / 255, blue: 26 / 255)       // #1A1A1A
+        ),
+        HomeVibe(
+            name: "Silly",
+            background: Color(red: 1 / 255, green: 100 / 255, blue: 54 / 255),     // #016436
+            textColor: Color(red: 244 / 255, green: 239 / 255, blue: 230 / 255)    // #F4EFE6
+        ),
+    ]
+}
+
 /// The home feed (wireframe Frame 47): curated cards, the blue "What should I
 /// watch tonight?" panel, browse-by-vibe pills, a "Things to do" grid, and the
 /// green film-fact card.
@@ -174,9 +201,9 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(text: "Browse by Vibe:")
             HStack(spacing: 10) {
-                ForEach(HomeContent.vibes) { vibe in
+                ForEach(HomeVibe.all) { vibe in
                     Button { showComingSoon = true } label: {
-                        VibePill(text: vibe.name, color: vibe.color)
+                        HomeVibePill(text: vibe.name, background: vibe.background, textColor: vibe.textColor)
                     }
                     .buttonStyle(.plain)
                 }
@@ -207,24 +234,26 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Text("Film Fact")
-                    .font(.dearBellaCaption)
-                    .foregroundStyle(.white.opacity(0.85))
+                    .font(.inter(12, weight: .semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color(red: 168 / 255, green: 160 / 255, blue: 149 / 255))
                 Spacer()
                 Button { showComingSoon = true } label: {
                     Text("Share")
-                        .font(.dearBellaCaption)
-                        .foregroundStyle(.white.opacity(0.85))
+                        .font(.inter(12, weight: .semibold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Color(red: 168 / 255, green: 160 / 255, blue: 149 / 255))
                 }
                 .buttonStyle(.plain)
             }
 
             Text(HomeContent.fact.headline)
-                .font(.inter(26, weight: .heavy, relativeTo: .largeTitle))
-                .foregroundStyle(.white)
+                .font(.dmSerif(26))
+                .foregroundStyle(Color(red: 244 / 255, green: 239 / 255, blue: 230 / 255))
 
             Text(HomeContent.fact.highlight)
-                .font(.inter(26, weight: .heavy, relativeTo: .largeTitle))
-                .foregroundStyle(.white)
+                .font(.dmSerif(26))
+                .foregroundStyle(Color(red: 244 / 255, green: 239 / 255, blue: 230 / 255))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
                 .background(Color.blue)
@@ -232,8 +261,12 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        .background(Color(red: 0.18, green: 0.78, blue: 0.35))
+        .background(Color(red: 26 / 255, green: 26 / 255, blue: 26 / 255))
         .clipShape(RoundedRectangle(cornerRadius: 18))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color(red: 42 / 255, green: 42 / 255, blue: 42 / 255), lineWidth: 1)
+        )
     }
 }
 
