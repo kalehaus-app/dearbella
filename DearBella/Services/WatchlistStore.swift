@@ -73,6 +73,13 @@ final class WatchlistStore: ObservableObject {
         films.removeAll { $0.id == film.id }
     }
 
+    /// Adds a film if it isn't already saved (used by swipe-right). Unlike
+    /// `toggle`, this never removes an already-saved film.
+    func save(_ film: SavedFilm) {
+        guard !isSaved(film.id) else { return }
+        films.insert(film, at: 0)
+    }
+
     /// One-time, background backfill: for saved films missing genre data
     /// (saved before genres were tracked), look them up on TMDB and update the
     /// record. Only fetches films that lack genres; TMDB failures are skipped.

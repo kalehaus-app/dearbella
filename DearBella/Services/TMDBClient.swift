@@ -67,6 +67,51 @@ struct TMDBClient: Sendable {
         }
     }
 
+    /// A page of TMDB's popular movies (`/movie/popular`). Returns `[]` on
+    /// failure or missing key.
+    func popularMovies(page: Int) async -> [TMDBMovie] {
+        guard hasAPIKey, var components = URLComponents(string: "\(baseURL)/movie/popular") else {
+            return []
+        }
+        components.queryItems = [
+            URLQueryItem(name: "api_key", value: Secrets.tmdbAPIKey),
+            URLQueryItem(name: "page", value: String(page)),
+            URLQueryItem(name: "include_adult", value: "false"),
+        ]
+        guard let url = components.url else { return [] }
+
+        do {
+            let (data, response) = try await session.data(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                return []
+            }
+            return try JSONDecoder().decode(TMDBSearchResponse.self, from: data).results
+        } catch {
+            return []
+        }
+    }
+
+    /// A single movie's runtime in minutes (from `/movie/{id}`). The popular
+    /// list doesn't include runtime, so we fetch it lazily per surfaced card.
+    func movieRuntime(id: Int) async -> Int? {
+        guard hasAPIKey, var components = URLComponents(string: "\(baseURL)/movie/\(id)") else {
+            return nil
+        }
+        components.queryItems = [URLQueryItem(name: "api_key", value: Secrets.tmdbAPIKey)]
+        guard let url = components.url else { return nil }
+
+        do {
+            let (data, response) = try await session.data(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                return nil
+            }
+            struct Detail: Decodable { let runtime: Int? }
+            return try JSONDecoder().decode(Detail.self, from: data).runtime
+        } catch {
+            return nil
+        }
+    }
+
     /// Builds a full image URL from a TMDB `poster_path` like "/abc.jpg".
     /// `size` is a TMDB bucket: w185, w342, w500, w780, original…
     static func posterURL(path: String?, size: String = "w500") -> URL? {

@@ -16,7 +16,7 @@ struct MainTabView: View {
                     Label("My List", systemImage: "bookmark")
                 }
 
-            SwipePlaceholderView()
+            SwipeView()
                 .tabItem {
                     Label("Swipe", systemImage: "rectangle.stack")
                 }
