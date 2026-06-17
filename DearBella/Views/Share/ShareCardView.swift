@@ -1,22 +1,19 @@
 import SwiftUI
 
-/// Step 1 (static): the 9:16 "My Month, in films" share card, built at the
-/// 1080×1920 export size with 5 hardcoded films at the spec's exact sizes,
-/// colors, and layout. Real data, the size ramp, and export come in later steps.
+/// The 9:16 "My Month, in films" share card at the 1080×1920 export size.
+///
+/// Takes the resolved film titles (top 5 from the watchlist) so the same view
+/// can be both previewed and rendered to an image later. Title sizes come from
+/// `ShareCardData.titleSize`; the month label is dynamic. Handles fewer-than-5
+/// and empty cases gracefully.
 struct ShareCardView: View {
+    /// The films to show, in rank order (top 5 from the user's list).
+    let films: [String]
+
     // Exact palette from the spec.
     private let cardRed = Color(red: 58 / 255, green: 10 / 255, blue: 14 / 255)    // #3A0A0E
     private let coral = Color(red: 240 / 255, green: 70 / 255, blue: 75 / 255)     // #F0464B
     private let mutedRed = Color(red: 154 / 255, green: 48 / 255, blue: 52 / 255)  // #9A3034
-
-    /// Hardcoded reference films with their per-rank title sizes (pt @1080).
-    private let films: [(rank: Int, title: String, size: CGFloat)] = [
-        (1, "Aftersun", 102),
-        (2, "Past Lives", 82),
-        (3, "Moonlight", 122),                          // standout / biggest
-        (4, "Lady Bird", 77),
-        (5, "The Worst Person in the World", 68),
-    ]
 
     var body: some View {
         ZStack {
@@ -25,7 +22,11 @@ struct ShareCardView: View {
                 Spacer().frame(height: 210)
                 topLabel
                 Spacer()
-                filmList
+                if films.isEmpty {
+                    emptyPlaceholder
+                } else {
+                    filmList
+                }
                 Spacer()
                 footer
                 Spacer().frame(height: 384)
@@ -38,7 +39,7 @@ struct ShareCardView: View {
 
     private var topLabel: some View {
         (
-            Text("MY JUNE, ")
+            Text("MY \(ShareCardData.monthName), ")
                 .font(.inter(40, weight: .bold))
                 .tracking(1.4)
                 .foregroundColor(coral)
@@ -54,17 +55,17 @@ struct ShareCardView: View {
 
     private var filmList: some View {
         VStack(spacing: 8) {
-            ForEach(films, id: \.rank) { film in
-                row(film)
+            ForEach(Array(films.enumerated()), id: \.offset) { index, title in
+                row(rank: index + 1, title: title, size: ShareCardData.titleSize(for: index, count: films.count))
             }
         }
     }
 
-    private func row(_ film: (rank: Int, title: String, size: CGFloat)) -> some View {
+    private func row(rank: Int, title: String, size: CGFloat) -> some View {
         ZStack {
             // Centered title.
-            Text(film.title)
-                .font(.inter(film.size, weight: .heavy))   // Inter-Bold (heaviest installed)
+            Text(title)
+                .font(.inter(size, weight: .heavy))   // Inter-Bold (heaviest installed)
                 .tracking(-1)
                 .foregroundStyle(coral)
                 .multilineTextAlignment(.center)
@@ -74,13 +75,23 @@ struct ShareCardView: View {
 
             // Hanging index number at the left.
             HStack {
-                Text("\(film.rank)")
+                Text("\(rank)")
                     .font(.inter(34, weight: .regular))
                     .foregroundStyle(mutedRed)
                 Spacer()
             }
         }
         .padding(.horizontal, 70)
+    }
+
+    // MARK: - Empty state
+
+    private var emptyPlaceholder: some View {
+        Text("Save films to your list to see your top 5 here.")
+            .font(.inter(40, weight: .medium))
+            .foregroundStyle(coral)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 120)
     }
 
     // MARK: - Footer
@@ -102,9 +113,22 @@ struct ShareCardView: View {
     }
 }
 
-#Preview {
-    // Scaled down so the 1080×1920 card is viewable in the canvas.
-    ShareCardView()
+#Preview("Top 5") {
+    ShareCardView(films: [
+        "Aftersun", "Past Lives", "Moonlight", "Lady Bird", "The Worst Person in the World",
+    ])
+    .scaleEffect(0.35)
+    .frame(width: 1080 * 0.35, height: 1920 * 0.35)
+}
+
+#Preview("Three films") {
+    ShareCardView(films: ["Aftersun", "Past Lives", "Moonlight"])
+        .scaleEffect(0.35)
+        .frame(width: 1080 * 0.35, height: 1920 * 0.35)
+}
+
+#Preview("Empty") {
+    ShareCardView(films: [])
         .scaleEffect(0.35)
         .frame(width: 1080 * 0.35, height: 1920 * 0.35)
 }
