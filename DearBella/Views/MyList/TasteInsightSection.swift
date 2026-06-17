@@ -7,15 +7,33 @@ struct TasteInsightSection: View {
     @ObservedObject var viewModel: MyListViewModel
     let context: TasteContext
 
+    /// Expanded by default; remembered for the session.
+    @State private var isExpanded = true
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let summary = viewModel.tasteSummary {
-                Text("YOUR TASTE")
-                    .font(.inter(12, weight: .semibold))
-                    .foregroundStyle(Theme.cream.opacity(0.6))
-                Text(summary)
-                    .font(.dearBellaBody)
-                    .foregroundStyle(Theme.cream)
+                Button {
+                    withAnimation(.easeInOut(duration: 0.25)) { isExpanded.toggle() }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text("YOUR TASTE")
+                            .font(.inter(12, weight: .semibold))
+                            .foregroundStyle(Theme.cream.opacity(0.6))
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Theme.cyan)
+                            .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                    }
+                }
+                .buttonStyle(.plain)
+
+                if isExpanded {
+                    Text(summary)
+                        .font(.dearBellaBody)
+                        .foregroundStyle(Theme.cream)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
             } else if viewModel.isLoadingSummary {
                 HStack(spacing: 8) {
                     ProgressView().tint(Theme.cyan)

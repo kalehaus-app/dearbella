@@ -92,6 +92,13 @@ struct MyListView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .contextMenu {
+                    Button(role: .destructive) {
+                        watchlist.remove(film)
+                    } label: {
+                        Label("Remove from List", systemImage: "trash")
+                    }
+                }
             }
         }
         .padding(.horizontal, 20)

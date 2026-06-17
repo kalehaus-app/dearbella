@@ -68,6 +68,11 @@ final class WatchlistStore: ObservableObject {
         }
     }
 
+    /// Removes a film from the list (used by the My List long-press menu).
+    func remove(_ film: SavedFilm) {
+        films.removeAll { $0.id == film.id }
+    }
+
     /// One-time, background backfill: for saved films missing genre data
     /// (saved before genres were tracked), look them up on TMDB and update the
     /// record. Only fetches films that lack genres; TMDB failures are skipped.
