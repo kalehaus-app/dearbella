@@ -39,6 +39,10 @@
 	<key>UIUserInterfaceStyle</key>
 	<string>Dark</string>
 
+	<!-- Only standard exempt encryption (HTTPS) — skips App Store encryption docs. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
 	<!-- Needed for "Save to Photos" on the monthly recap share card. -->
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>DearBella saves your monthly recap card to your photo library.</string>
