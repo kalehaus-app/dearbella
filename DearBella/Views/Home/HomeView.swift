@@ -91,20 +91,14 @@ struct HomeView: View {
                 .font(.dmSerif(32, relativeTo: .title))
                 .foregroundStyle(Theme.textPrimary)
             Spacer()
-            Menu {
-                Button {
-                    showAbout = true
-                } label: {
-                    Label("About", systemImage: "info.circle")
-                }
-                Button("Reset onboarding", role: .destructive) {
-                    withAnimation { store.resetOnboarding() }
-                }
+            Button {
+                showAbout = true
             } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.title3)
                     .foregroundStyle(Theme.textSecondary)
             }
+            .buttonStyle(.plain)
         }
         .padding(.top, 8)
     }

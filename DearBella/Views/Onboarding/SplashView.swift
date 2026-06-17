@@ -1,31 +1,23 @@
 import SwiftUI
 
-/// The opening "Dear Bella" screen (wireframe Frame 52): a full-bleed,
-/// slowly-zooming background image with the logo over a dark scrim. Shown
-/// briefly, then the flow advances to the intro carousel.
+/// The opening splash: the full-bleed SplashBackground graphic, edge to edge,
+/// with a gentle fade-in. No text overlay — the image is the complete splash.
+/// Timing and the transition into the app are handled by `OnboardingFlowView`.
 struct SplashView: View {
+    @State private var appeared = false
+
     var body: some View {
-        ZStack {
-            KenBurnsImage(imageName: "SplashBackground")
-
-            // Dark scrim so the logo stays legible over any image.
-            LinearGradient(
-                colors: [.black.opacity(0.15), .black.opacity(0.65)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
-            VStack {
-                Spacer()
-                Text("Dear Bella")
-                    .font(.system(size: 44, weight: .bold))
-                    .foregroundStyle(.white)
-                    .shadow(radius: 8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 28)
-                Spacer().frame(height: 120)
-            }
+        GeometryReader { geo in
+            Image("SplashBackground")
+                .resizable()
+                .scaledToFill()
+                .frame(width: geo.size.width, height: geo.size.height)
+                .clipped()
+        }
+        .ignoresSafeArea()
+        .opacity(appeared ? 1 : 0)
+        .onAppear {
+            withAnimation(.easeIn(duration: 0.6)) { appeared = true }
         }
     }
 }
