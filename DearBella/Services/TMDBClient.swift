@@ -1,28 +1,27 @@
 import Foundation
 
-/// A thin wrapper around TMDB's REST API.
+/// A thin wrapper around TMDB, routed through our Vercel proxy.
 ///
-/// Uses the v3 "API Key" (the 32-character key from your TMDB account) passed
-/// as the `api_key` query parameter. All calls are best-effort: on any error
-/// or a missing key they return `nil` rather than throwing, so the UI can
+/// The proxy takes a `path` query param (the TMDB path without the leading
+/// `/3/`, e.g. `search/movie`) plus the endpoint's other params, and adds the
+/// API key server-side — so no key ships in the app. All calls are best-effort:
+/// on any error they return `nil`/`[]` rather than throwing, so the UI can
 /// quietly fall back to placeholder art.
 struct TMDBClient: Sendable {
     static let shared = TMDBClient()
 
     private let session = URLSession.shared
-    private let baseURL = "https://api.themoviedb.org/3"
+    private let baseURL = "https://dearbella-proxy.vercel.app/api/tmdb"
 
-    /// Whether a key was provided at build time.
-    var hasAPIKey: Bool { !Secrets.tmdbAPIKey.isEmpty }
+    /// The proxy holds the key, so TMDB is always reachable from the app's side.
+    var hasAPIKey: Bool { true }
 
     /// Searches for a movie and returns the best (first) match.
     func searchMovie(title: String, year: Int?) async -> TMDBMovie? {
-        guard hasAPIKey,
-              var components = URLComponents(string: "\(baseURL)/search/movie")
-        else { return nil }
+        guard var components = URLComponents(string: baseURL) else { return nil }
 
         var queryItems = [
-            URLQueryItem(name: "api_key", value: Secrets.tmdbAPIKey),
+            URLQueryItem(name: "path", value: "search/movie"),
             URLQueryItem(name: "query", value: title),
             URLQueryItem(name: "include_adult", value: "false"),
         ]
@@ -44,16 +43,15 @@ struct TMDBClient: Sendable {
         }
     }
 
-    /// Movies similar to a given title (TMDB's `/movie/{id}/similar`). Searches
+    /// Movies similar to a given title (TMDB's `movie/{id}/similar`). Searches
     /// for the reference title first, then fetches its similar list. Returns an
-    /// empty array on any failure or missing key.
+    /// empty array on any failure.
     func similarMovies(toTitle title: String) async -> [TMDBMovie] {
-        guard hasAPIKey,
-              let match = await searchMovie(title: title, year: nil),
-              var components = URLComponents(string: "\(baseURL)/movie/\(match.id)/similar")
+        guard let match = await searchMovie(title: title, year: nil),
+              var components = URLComponents(string: baseURL)
         else { return [] }
 
-        components.queryItems = [URLQueryItem(name: "api_key", value: Secrets.tmdbAPIKey)]
+        components.queryItems = [URLQueryItem(name: "path", value: "movie/\(match.id)/similar")]
         guard let url = components.url else { return [] }
 
         do {
@@ -67,14 +65,12 @@ struct TMDBClient: Sendable {
         }
     }
 
-    /// A page of TMDB's popular movies (`/movie/popular`). Returns `[]` on
-    /// failure or missing key.
+    /// A page of TMDB's popular movies (`movie/popular`). Returns `[]` on failure.
     func popularMovies(page: Int) async -> [TMDBMovie] {
-        guard hasAPIKey, var components = URLComponents(string: "\(baseURL)/movie/popular") else {
-            return []
-        }
+        guard var components = URLComponents(string: baseURL) else { return [] }
+
         components.queryItems = [
-            URLQueryItem(name: "api_key", value: Secrets.tmdbAPIKey),
+            URLQueryItem(name: "path", value: "movie/popular"),
             URLQueryItem(name: "page", value: String(page)),
             URLQueryItem(name: "include_adult", value: "false"),
         ]
@@ -91,13 +87,12 @@ struct TMDBClient: Sendable {
         }
     }
 
-    /// A single movie's runtime in minutes (from `/movie/{id}`). The popular
+    /// A single movie's runtime in minutes (from `movie/{id}`). The popular
     /// list doesn't include runtime, so we fetch it lazily per surfaced card.
     func movieRuntime(id: Int) async -> Int? {
-        guard hasAPIKey, var components = URLComponents(string: "\(baseURL)/movie/\(id)") else {
-            return nil
-        }
-        components.queryItems = [URLQueryItem(name: "api_key", value: Secrets.tmdbAPIKey)]
+        guard var components = URLComponents(string: baseURL) else { return nil }
+
+        components.queryItems = [URLQueryItem(name: "path", value: "movie/\(id)")]
         guard let url = components.url else { return nil }
 
         do {
@@ -112,14 +107,13 @@ struct TMDBClient: Sendable {
         }
     }
 
-    /// The YouTube key for a movie's trailer (from `/movie/{id}/videos`), or
+    /// The YouTube key for a movie's trailer (from `movie/{id}/videos`), or
     /// `nil` if there's no YouTube trailer / on failure. Prefers an official
     /// trailer, then any trailer, then any YouTube clip.
     func trailerYouTubeKey(id: Int) async -> String? {
-        guard hasAPIKey, var components = URLComponents(string: "\(baseURL)/movie/\(id)/videos") else {
-            return nil
-        }
-        components.queryItems = [URLQueryItem(name: "api_key", value: Secrets.tmdbAPIKey)]
+        guard var components = URLComponents(string: baseURL) else { return nil }
+
+        components.queryItems = [URLQueryItem(name: "path", value: "movie/\(id)/videos")]
         guard let url = components.url else { return nil }
 
         struct Response: Decodable { let results: [Video] }
