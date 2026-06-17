@@ -205,6 +205,56 @@ struct RecommendationEngine {
         return RecommendationResult(intro: output.intro, films: resolved)
     }
 
+    // MARK: - Daily pick
+
+    /// Picks ONE film for tonight from the user's taste, with a witty personal
+    /// one-line reason in Bella's voice. `exclude` lists titles to avoid (already
+    /// shown today / saved).
+    func dailyPick(context: TasteContext, exclude: [String]) async throws -> RecommendedFilm? {
+        let prompt = """
+        Based on this person's taste, pick exactly ONE film for them to watch
+        tonight.
+        - Favorite genres: \(list(context.genres))
+        - Films they love: \(list(context.topFilms))
+        Do NOT pick any of these (already shown or saved): \(list(exclude))
+        Give a short, witty, personal one-line reason in your voice, as if you
+        know them — e.g. "You told me you love a slow-burn ache, trust me tonight."
+        """
+
+        let tool = ClaudeTool(
+            name: "present_daily_pick",
+            description: "Present one personalized film pick for tonight.",
+            inputSchema: claudeJSONSchema("""
+            {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string" },
+                "year": { "type": "integer" },
+                "reason": { "type": "string", "description": "One witty, personal sentence in Bella's voice." }
+              },
+              "required": ["title", "year", "reason"]
+            }
+            """)
+        )
+
+        let pick = try await claude.generate(
+            system: persona,
+            userPrompt: prompt,
+            tool: tool,
+            as: DailyPickToolInput.self
+        )
+
+        let movie = await tmdb.searchMovie(title: pick.title, year: pick.year)
+        return RecommendedFilm(
+            title: pick.title,
+            year: pick.year,
+            reason: pick.reason,
+            posterPath: movie?.posterPath,
+            tmdbID: movie?.id,
+            genres: movie?.genreNames ?? []
+        )
+    }
+
     // MARK: - Taste summary
 
     func tasteSummary(context: TasteContext) async throws -> String {

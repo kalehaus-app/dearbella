@@ -56,7 +56,7 @@ struct HomeView: View {
                 watchTonightPanel
                 curatedSection
                 MyListPreview()
-                filmFactCard
+                BellaPickCard()
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 40)
@@ -146,46 +146,8 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Film fact
-
-    private var filmFactCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Film Fact")
-                    .font(.inter(12, weight: .semibold))
-                    .textCase(.uppercase)
-                    .foregroundStyle(Color(red: 168 / 255, green: 160 / 255, blue: 149 / 255))
-                Spacer()
-                Button { showComingSoon = true } label: {
-                    Text("Share")
-                        .font(.inter(12, weight: .semibold))
-                        .textCase(.uppercase)
-                        .foregroundStyle(Color(red: 168 / 255, green: 160 / 255, blue: 149 / 255))
-                }
-                .buttonStyle(.plain)
-            }
-
-            Text(HomeContent.fact.headline)
-                .font(.dmSerif(26))
-                .foregroundStyle(Color(red: 244 / 255, green: 239 / 255, blue: 230 / 255))
-
-            Text(HomeContent.fact.highlight)
-                .font(.dmSerif(26))
-                .foregroundStyle(Color(red: 244 / 255, green: 239 / 255, blue: 230 / 255))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
-                .background(Color.blue)
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-        .background(Color(red: 26 / 255, green: 26 / 255, blue: 26 / 255))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(Color(red: 42 / 255, green: 42 / 255, blue: 42 / 255), lineWidth: 1)
-        )
-    }
+    // MARK: - Bella's Pick Today
+    // The old static "Film Fact" card was replaced by `BellaPickCard`.
 }
 
 #Preview {
