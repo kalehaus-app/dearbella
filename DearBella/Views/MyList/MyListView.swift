@@ -59,6 +59,11 @@ struct MyListView: View {
                 }
             }
         }
+        .task {
+            // Quietly backfill genres for films saved before genre tracking,
+            // so the filter pills populate. No-op once every film has genres.
+            await watchlist.backfillGenresIfNeeded()
+        }
     }
 
     private var header: some View {

@@ -68,6 +68,37 @@ final class WatchlistStore: ObservableObject {
         }
     }
 
+    /// One-time, background backfill: for saved films missing genre data
+    /// (saved before genres were tracked), look them up on TMDB and update the
+    /// record. Only fetches films that lack genres; TMDB failures are skipped.
+    func backfillGenresIfNeeded() async {
+        let missing = films.filter { $0.genres.isEmpty }
+        guard !missing.isEmpty else { return }
+
+        let client = TMDBClient.shared
+        var resolved: [String: [String]] = [:]
+        for film in missing {
+            let movie = await client.searchMovie(title: film.title, year: film.year)
+            let genres = movie?.genreNames ?? []
+            if !genres.isEmpty { resolved[film.id] = genres }
+        }
+        guard !resolved.isEmpty else { return }
+
+        // Re-read `films` (it may have changed during the awaits) and apply
+        // resolved genres in one assignment — a single persist + UI update.
+        films = films.map { film in
+            guard film.genres.isEmpty, let genres = resolved[film.id] else { return film }
+            return SavedFilm(
+                id: film.id,
+                title: film.title,
+                year: film.year,
+                posterPath: film.posterPath,
+                tmdbID: film.tmdbID,
+                genres: genres
+            )
+        }
+    }
+
     /// A "where to watch" link — the TMDB watch page when we have an id, else a
     /// Google search as a fallback.
     static func watchURL(for film: SavedFilm) -> URL {
