@@ -34,6 +34,7 @@ struct HomeView: View {
     @State private var showComingSoon = false
     @State private var showChat = false
     @State private var selectedCollection: HomeImageTile?
+    @State private var showAbout = false
 
     private let twoColumns = [
         GridItem(.flexible(), spacing: 12),
@@ -72,6 +73,9 @@ struct HomeView: View {
                     .environmentObject(watchlist)
             }
         }
+        .sheet(isPresented: $showAbout) {
+            AboutView()
+        }
         .alert("Coming soon", isPresented: $showComingSoon) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -88,6 +92,11 @@ struct HomeView: View {
                 .foregroundStyle(Theme.textPrimary)
             Spacer()
             Menu {
+                Button {
+                    showAbout = true
+                } label: {
+                    Label("About", systemImage: "info.circle")
+                }
                 Button("Reset onboarding", role: .destructive) {
                     withAnimation { store.resetOnboarding() }
                 }
