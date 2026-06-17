@@ -48,32 +48,33 @@ struct ImageTile: View {
     var body: some View {
         Color.clear
             .aspectRatio(aspectRatio, contentMode: .fit)
+            // Each layer is sized to the tile (not the overflowing image), so
+            // the caption can't get pushed past the clipped edge.
             .overlay {
-                ZStack {
-                    Image(imageName)
-                        .resizable()
-                        .scaledToFill()
-
-                    // Subtle scrim: darkest at the caption edge, fading to clear.
-                    LinearGradient(
-                        colors: captionAtTop
-                            ? [.black.opacity(0.6), .clear]
-                            : [.clear, .black.opacity(0.6)],
-                        startPoint: captionAtTop ? .top : .center,
-                        endPoint: captionAtTop ? .center : .bottom
-                    )
-
-                    Text(caption)
-                        .font(.inter(15, weight: .semibold))
-                        .foregroundStyle(cream)
-                        .shadow(radius: 3)
-                        .padding(12)
-                        .frame(
-                            maxWidth: .infinity,
-                            maxHeight: .infinity,
-                            alignment: captionAtTop ? .topLeading : .bottomLeading
-                        )
-                }
+                Image(imageName)
+                    .resizable()
+                    .scaledToFill()
+            }
+            .overlay {
+                // Subtle scrim: darkest at the caption edge, fading to clear.
+                LinearGradient(
+                    colors: captionAtTop
+                        ? [.black.opacity(0.6), .clear]
+                        : [.clear, .black.opacity(0.6)],
+                    startPoint: captionAtTop ? .top : .center,
+                    endPoint: captionAtTop ? .center : .bottom
+                )
+            }
+            .overlay(alignment: captionAtTop ? .topLeading : .bottomLeading) {
+                Text(caption)
+                    .font(.inter(15, weight: .semibold))
+                    .foregroundStyle(cream)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                    .shadow(radius: 3)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
             }
             .clipShape(RoundedRectangle(cornerRadius: Theme.cardCornerRadius))
     }
