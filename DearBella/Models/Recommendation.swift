@@ -30,6 +30,7 @@ struct RecommendedFilm: Identifiable {
     let reason: String
     let posterPath: String?
     let tmdbID: Int?
+    let genres: [String]
 
     var savedFilm: SavedFilm {
         SavedFilm(
@@ -37,7 +38,8 @@ struct RecommendedFilm: Identifiable {
             title: title,
             year: year,
             posterPath: posterPath,
-            tmdbID: tmdbID
+            tmdbID: tmdbID,
+            genres: genres
         )
     }
 }
@@ -46,6 +48,11 @@ struct RecommendedFilm: Identifiable {
 struct RecommendationResult {
     let intro: String
     let films: [RecommendedFilm]
+}
+
+/// Decoded from Claude's `present_taste_summary` tool call.
+struct TasteSummaryToolInput: Decodable {
+    let summary: String
 }
 
 // MARK: - Curated home cards tool I/O

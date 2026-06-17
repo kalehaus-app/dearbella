@@ -21,7 +21,7 @@ struct MainTabView: View {
                     Label("Swipe", systemImage: "rectangle.stack")
                 }
         }
-        .tint(Theme.accent)
+        .tint(Theme.cyan)
     }
 }
 

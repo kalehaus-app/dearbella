@@ -24,6 +24,15 @@ enum Theme {
     /// The signature DearBella red, taken from the splash "clapperboard".
     static let accent = Color(red: 0.95, green: 0.20, blue: 0.18)
 
+    /// Cyan accent (#6ADFFF) — selected tab + My List accents.
+    static let cyan = Color(red: 106 / 255, green: 223 / 255, blue: 255 / 255)
+
+    /// Cream (#F4EFE6) — primary text color in the new design system.
+    static let cream = Color(red: 244 / 255, green: 239 / 255, blue: 230 / 255)
+
+    /// Near-black (#1A1A1A) — text on light/cyan fills.
+    static let ink = Color(red: 26 / 255, green: 26 / 255, blue: 26 / 255)
+
     // MARK: - Shape
 
     /// Standard corner radius for the rounded poster cards.

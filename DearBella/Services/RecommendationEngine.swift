@@ -82,7 +82,8 @@ struct RecommendationEngine {
                     year: film.year,
                     reason: film.reason,
                     posterPath: movie?.posterPath,
-                    tmdbID: movie?.id
+                    tmdbID: movie?.id,
+                    genres: movie?.genreNames ?? []
                 )
             )
         }
@@ -141,6 +142,40 @@ struct RecommendationEngine {
             cards.append(ResolvedCuratedCard(caption: card.title, posterPath: movie?.posterPath))
         }
         return cards
+    }
+
+    // MARK: - Taste summary
+
+    func tasteSummary(context: TasteContext) async throws -> String {
+        let prompt = """
+        The user's saved films: \(list(context.topFilms))
+        Genres across their list: \(list(context.genres))
+
+        Write a short, witty one or two sentence summary of their movie taste, in \
+        DearBella's voice — e.g. "Based on your list, you're into quirky indie \
+        comedies and emotional sci-fi." Address them as "you".
+        """
+
+        let tool = ClaudeTool(
+            name: "present_taste_summary",
+            description: "Present a short, witty summary of the user's movie taste.",
+            inputSchema: claudeJSONSchema("""
+            {
+              "type": "object",
+              "properties": {
+                "summary": { "type": "string", "description": "One or two witty sentences about their taste." }
+              },
+              "required": ["summary"]
+            }
+            """)
+        )
+
+        return try await claude.generate(
+            system: persona,
+            userPrompt: prompt,
+            tool: tool,
+            as: TasteSummaryToolInput.self
+        ).summary
     }
 
     private func list(_ items: [String]) -> String {

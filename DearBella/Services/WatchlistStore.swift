@@ -7,6 +7,34 @@ struct SavedFilm: Identifiable, Codable, Equatable {
     let year: Int?
     let posterPath: String?
     let tmdbID: Int?
+    let genres: [String]
+
+    init(
+        id: String,
+        title: String,
+        year: Int?,
+        posterPath: String?,
+        tmdbID: Int?,
+        genres: [String] = []
+    ) {
+        self.id = id
+        self.title = title
+        self.year = year
+        self.posterPath = posterPath
+        self.tmdbID = tmdbID
+        self.genres = genres
+    }
+
+    // Custom decode so films saved before `genres` existed still load.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        title = try c.decode(String.self, forKey: .title)
+        year = try c.decodeIfPresent(Int.self, forKey: .year)
+        posterPath = try c.decodeIfPresent(String.self, forKey: .posterPath)
+        tmdbID = try c.decodeIfPresent(Int.self, forKey: .tmdbID)
+        genres = try c.decodeIfPresent([String].self, forKey: .genres) ?? []
+    }
 }
 
 /// Holds the user's saved films and persists them on-device, the same way
