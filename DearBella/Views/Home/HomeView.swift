@@ -1,45 +1,15 @@
 import SwiftUI
 
-/// A home-feed image tile: a local catalog image + caption. Backs the two
-/// 2×2 grids ("Curated for you" and "Things to do").
-private struct HomeImageTile: Identifiable {
-    let id = UUID()
-    let image: String
-    let caption: String
-    /// Where this tile's collection screen sources its films (curated tiles only).
-    var source: CollectionViewModel.Source? = nil
-
-    static let curated: [HomeImageTile] = [
-        HomeImageTile(image: "dreamy", caption: "Tonight's Mood: Dreamy & Disoriented",
-                      source: .claudeTheme(prompt: "dreamy, surreal, disorienting films", count: 6)),
-        HomeImageTile(image: "cinema", caption: "Films you'll love if you like Cinematography",
-                      source: .claudeTheme(prompt: "films celebrated for stunning, beautiful cinematography", count: 6)),
-        HomeImageTile(image: "gems", caption: "Top 3 Hidden Gems this week",
-                      source: .claudeTheme(prompt: "underrated hidden-gem films", count: 3)),
-        HomeImageTile(image: "lovers", caption: "Underrated Lovers Films for you",
-                      source: .claudeTheme(prompt: "underrated romance / love-story films", count: 6)),
-    ]
-}
-
-/// The home feed (wireframe Frame 47): curated cards, the blue "What should I
-/// watch tonight?" panel, browse-by-vibe pills, a "Things to do" grid, and the
-/// green film-fact card.
-///
-/// The chat, vibes, and "things to do" are placeholders for now — tapping them
-/// shows a "coming soon" note. We wire the chat up for real in Step 5.
+/// The home feed: the "What should I watch tonight?" panel, a New & On Demand
+/// row of recent releases, the My List preview, and Bella's daily pick.
 struct HomeView: View {
     @EnvironmentObject private var store: OnboardingStore
-    @EnvironmentObject private var catalog: MovieCatalog
     @EnvironmentObject private var watchlist: WatchlistStore
     @State private var showComingSoon = false
     @State private var showChat = false
-    @State private var selectedCollection: HomeImageTile?
     @State private var showAbout = false
-
-    private let twoColumns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
+    @State private var recentMovies: [SwipeMovie] = []
+    @State private var didLoadRecent = false
 
     /// The user's saved genres + top films, used to personalize Claude calls.
     private var tasteContext: TasteContext {
@@ -55,7 +25,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 28) {
                 header
                 watchTonightPanel
-                curatedSection
+                newOnDemandSection
                 MyListPreview()
                 BellaPickCard()
             }
@@ -63,15 +33,10 @@ struct HomeView: View {
             .padding(.bottom, 40)
         }
         .background(Theme.background.ignoresSafeArea())
+        .task { await loadRecentReleases() }
         .fullScreenCover(isPresented: $showChat) {
             ChatView(context: tasteContext)
                 .environmentObject(watchlist)
-        }
-        .fullScreenCover(item: $selectedCollection) { tile in
-            if let source = tile.source {
-                CollectionView(title: tile.caption, source: source)
-                    .environmentObject(watchlist)
-            }
         }
         .sheet(isPresented: $showAbout) {
             AboutView()
@@ -103,20 +68,41 @@ struct HomeView: View {
         .padding(.top, 8)
     }
 
-    // MARK: - Curated
+    // MARK: - New & On Demand
 
-    private var curatedSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionTitle(text: "Curated for you")
-            LazyVGrid(columns: twoColumns, spacing: 12) {
-                ForEach(HomeImageTile.curated) { tile in
-                    Button { selectedCollection = tile } label: {
-                        ImageTile(imageName: tile.image, caption: tile.caption, captionAtTop: false)
+    @ViewBuilder
+    private var newOnDemandSection: some View {
+        if !recentMovies.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                SectionTitle(text: "New & On Demand")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(recentMovies) { movie in
+                            Link(destination: WatchlistStore.watchURL(for: movie.savedFilm)) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    PosterImage(posterPath: movie.posterPath, seed: movie.title)
+                                        .frame(width: 110, height: 165)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    Text(movie.title)
+                                        .font(.dearBellaCaption)
+                                        .foregroundStyle(Theme.cream)
+                                        .lineLimit(1)
+                                        .frame(width: 110, alignment: .leading)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
+    }
+
+    private func loadRecentReleases() async {
+        guard !didLoadRecent else { return }
+        didLoadRecent = true
+        let movies = await TMDBClient.shared.recentReleases()
+        recentMovies = movies.compactMap(SwipeMovie.init(from:))
     }
 
     // MARK: - My List

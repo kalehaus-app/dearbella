@@ -54,22 +54,3 @@ struct RecommendationResult {
 struct TasteSummaryToolInput: Decodable {
     let summary: String
 }
-
-// MARK: - Curated home cards tool I/O
-
-struct CuratedToolInput: Decodable {
-    let cards: [CuratedCardSuggestion]
-}
-
-struct CuratedCardSuggestion: Decodable {
-    let title: String      // witty card caption
-    let filmTitle: String  // representative film, for the poster
-    let filmYear: Int?
-}
-
-/// A curated home card after resolving its representative film to a poster.
-struct ResolvedCuratedCard: Identifiable, Codable {
-    var id = UUID()
-    let caption: String
-    let posterPath: String?
-}

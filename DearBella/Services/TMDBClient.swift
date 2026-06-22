@@ -43,15 +43,27 @@ struct TMDBClient: Sendable {
         }
     }
 
-    /// Movies similar to a given title (TMDB's `movie/{id}/similar`). Searches
-    /// for the reference title first, then fetches its similar list. Returns an
-    /// empty array on any failure.
-    func similarMovies(toTitle title: String) async -> [TMDBMovie] {
-        guard let match = await searchMovie(title: title, year: nil),
-              var components = URLComponents(string: baseURL)
-        else { return [] }
+    /// Recent releases for the Home "New & On Demand" row (`discover/movie`):
+    /// films released in the last ~3 months, sorted by popularity, with enough
+    /// votes to be real entries. Posterless results are filtered out so the row
+    /// never shows blank cards. Returns `[]` on failure.
+    func recentReleases() async -> [TMDBMovie] {
+        guard var components = URLComponents(string: baseURL) else { return [] }
 
-        components.queryItems = [URLQueryItem(name: "path", value: "movie/\(match.id)/similar")]
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = Date()
+        let threeMonthsAgo = Calendar.current.date(byAdding: .month, value: -3, to: today) ?? today
+
+        components.queryItems = [
+            URLQueryItem(name: "path", value: "discover/movie"),
+            URLQueryItem(name: "sort_by", value: "popularity.desc"),
+            URLQueryItem(name: "include_adult", value: "false"),
+            URLQueryItem(name: "vote_count.gte", value: "50"),
+            URLQueryItem(name: "primary_release_date.gte", value: formatter.string(from: threeMonthsAgo)),
+            URLQueryItem(name: "primary_release_date.lte", value: formatter.string(from: today)),
+        ]
         guard let url = components.url else { return [] }
 
         do {
@@ -60,6 +72,7 @@ struct TMDBClient: Sendable {
                 return []
             }
             return try JSONDecoder().decode(TMDBSearchResponse.self, from: data).results
+                .filter { $0.posterPath?.isEmpty == false }
         } catch {
             return []
         }

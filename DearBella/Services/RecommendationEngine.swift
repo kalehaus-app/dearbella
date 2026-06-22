@@ -1,8 +1,8 @@
 import Foundation
 
 /// Turns a taste profile + mood into real, poster-backed film recommendations,
-/// and generates the personalized "Curated for you" home cards. Uses Claude for
-/// the picks (and the witty voice) and TMDB to resolve each title to art.
+/// the daily pick, and the taste summary. Uses Claude for the picks (and the
+/// witty voice) and TMDB to resolve each title to art.
 struct RecommendationEngine {
     static let shared = RecommendationEngine()
 
@@ -56,121 +56,6 @@ struct RecommendationEngine {
                       "title": { "type": "string" },
                       "year": { "type": "integer" },
                       "reason": { "type": "string", "description": "One witty, personal sentence." }
-                    },
-                    "required": ["title", "year", "reason"]
-                  }
-                }
-              },
-              "required": ["intro", "films"]
-            }
-            """)
-        )
-
-        let output = try await claude.generate(
-            system: persona,
-            userPrompt: prompt,
-            tool: tool,
-            as: RecommendationToolInput.self
-        )
-
-        var resolved: [RecommendedFilm] = []
-        for film in output.films {
-            let movie = await tmdb.searchMovie(title: film.title, year: film.year)
-            resolved.append(
-                RecommendedFilm(
-                    title: film.title,
-                    year: film.year,
-                    reason: film.reason,
-                    posterPath: movie?.posterPath,
-                    tmdbID: movie?.id,
-                    genres: movie?.genreNames ?? []
-                )
-            )
-        }
-        return RecommendationResult(intro: output.intro, films: resolved)
-    }
-
-    // MARK: - Curated home cards
-
-    func curatedCards(context: TasteContext) async throws -> [ResolvedCuratedCard] {
-        let prompt = """
-        Taste profile:
-        - Favorite genres: \(list(context.genres))
-        - Top films: \(list(context.topFilms))
-
-        Generate 4 personalized "Curated for you" home-feed cards. Each card has a \
-        witty title (like "Films you'll love if you liked Carrie" or "Tonight's \
-        mood: dreamy & disoriented") and one representative real film whose poster \
-        will back the card. Tailor them to this user's taste.
-        """
-
-        let tool = ClaudeTool(
-            name: "present_curated",
-            description: "Present 4 personalized curated home cards.",
-            inputSchema: claudeJSONSchema("""
-            {
-              "type": "object",
-              "properties": {
-                "cards": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "title": { "type": "string", "description": "Witty card caption." },
-                      "filmTitle": { "type": "string", "description": "Representative real film." },
-                      "filmYear": { "type": "integer" }
-                    },
-                    "required": ["title", "filmTitle"]
-                  }
-                }
-              },
-              "required": ["cards"]
-            }
-            """)
-        )
-
-        let output = try await claude.generate(
-            system: persona,
-            userPrompt: prompt,
-            tool: tool,
-            as: CuratedToolInput.self
-        )
-
-        var cards: [ResolvedCuratedCard] = []
-        for card in output.cards {
-            let movie = await tmdb.searchMovie(title: card.filmTitle, year: card.filmYear)
-            cards.append(ResolvedCuratedCard(caption: card.title, posterPath: movie?.posterPath))
-        }
-        return cards
-    }
-
-    // MARK: - Themed collection
-
-    /// Curates a set of films for a theme (e.g. "dreamy, surreal, disorienting
-    /// films"), reusing the same tool + poster resolution as `recommend`.
-    func recommendForTheme(_ theme: String, count: Int) async throws -> RecommendationResult {
-        let prompt = """
-        Curate a themed film collection: \(theme).
-        Recommend exactly \(count) real films that genuinely fit this theme. One
-        witty sentence per reason.
-        """
-
-        let tool = ClaudeTool(
-            name: "present_recommendations",
-            description: "Present a themed collection of film recommendations.",
-            inputSchema: claudeJSONSchema("""
-            {
-              "type": "object",
-              "properties": {
-                "intro": { "type": "string", "description": "A short, witty intro to the collection." },
-                "films": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "title": { "type": "string" },
-                      "year": { "type": "integer" },
-                      "reason": { "type": "string", "description": "One witty, fitting sentence." }
                     },
                     "required": ["title", "year", "reason"]
                   }

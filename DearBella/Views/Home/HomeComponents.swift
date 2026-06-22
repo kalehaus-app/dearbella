@@ -32,54 +32,6 @@ struct CaptionCard: View {
     }
 }
 
-/// A home-feed tile backed by a local asset-catalog image, with a caption in a
-/// corner over a subtle dark scrim. "Curated for you" uses a bottom caption;
-/// "Things to do" uses a top caption.
-struct ImageTile: View {
-    let imageName: String
-    let caption: String
-    /// `true` places the caption at the top-left, `false` at the bottom-left.
-    let captionAtTop: Bool
-    var aspectRatio: CGFloat = 1.5
-
-    /// Cream (#F4EFE6) — the design's caption color.
-    private let cream = Color(red: 244 / 255, green: 239 / 255, blue: 230 / 255)
-
-    var body: some View {
-        Color.clear
-            .aspectRatio(aspectRatio, contentMode: .fit)
-            // Each layer is sized to the tile (not the overflowing image), so
-            // the caption can't get pushed past the clipped edge.
-            .overlay {
-                Image(imageName)
-                    .resizable()
-                    .scaledToFill()
-            }
-            .overlay {
-                // Subtle scrim: darkest at the caption edge, fading to clear.
-                LinearGradient(
-                    colors: captionAtTop
-                        ? [.black.opacity(0.6), .clear]
-                        : [.clear, .black.opacity(0.6)],
-                    startPoint: captionAtTop ? .top : .center,
-                    endPoint: captionAtTop ? .center : .bottom
-                )
-            }
-            .overlay(alignment: captionAtTop ? .topLeading : .bottomLeading) {
-                Text(caption)
-                    .font(.inter(15, weight: .semibold))
-                    .foregroundStyle(cream)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.8)
-                    .shadow(radius: 3)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 12)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: Theme.cardCornerRadius))
-    }
-}
-
 /// Home-only "Browse by Vibe" pill with explicit background + text colors.
 /// (Separate from the shared `VibePill` so onboarding stays untouched.)
 struct HomeVibePill: View {
