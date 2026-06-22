@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// One head-to-head matchup: two large posters side by side. Tap the one you'd
-/// rather watch; it scales up, the other fades, and the bracket advances.
+/// One head-to-head matchup: two large posters side by side. Tapping a poster
+/// opens a detail sheet to preview it; choosing happens from the sheet, which
+/// then advances the bracket.
 struct BracketMatchupView: View {
     @ObservedObject var viewModel: BracketViewModel
 
-    @State private var chosenID: Int?
+    @State private var detailMovie: SwipeMovie?
 
     var body: some View {
         VStack(spacing: 24) {
@@ -31,6 +32,14 @@ struct BracketMatchupView: View {
             Spacer(minLength: 0)
         }
         .padding(.vertical, 16)
+        .sheet(item: $detailMovie) { movie in
+            BracketMovieDetailSheet(movie: movie) {
+                detailMovie = nil
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    viewModel.choose(movie)
+                }
+            }
+        }
     }
 
     private var progress: some View {
@@ -60,20 +69,7 @@ struct BracketMatchupView: View {
                 .lineLimit(2)
         }
         .frame(maxWidth: .infinity)
-        .scaleEffect(chosenID == movie.id ? 1.05 : 1)
-        .opacity(chosenID != nil && chosenID != movie.id ? 0.3 : 1)
-        .onTapGesture { choose(movie) }
-    }
-
-    private func choose(_ movie: SwipeMovie) {
-        guard chosenID == nil else { return }
-        withAnimation(.easeInOut(duration: 0.25)) {
-            chosenID = movie.id
-        } completion: {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                viewModel.choose(movie)
-            }
-            chosenID = nil
-        }
+        .contentShape(Rectangle())
+        .onTapGesture { detailMovie = movie }
     }
 }
