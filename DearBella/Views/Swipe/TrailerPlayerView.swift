@@ -19,17 +19,46 @@ struct YouTubeWebView: UIViewRepresentable {
         webView.backgroundColor = .black
         webView.scrollView.backgroundColor = .black
         webView.scrollView.isScrollEnabled = false
+        context.coordinator.loadedKey = nil
         return webView
     }
 
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator {
+        /// Tracks the last key we loaded so SwiftUI re-renders don't restart it.
+        var loadedKey: String?
+    }
+
     func updateUIView(_ webView: WKWebView, context: Context) {
-        guard let url = URL(string: "https://www.youtube-nocookie.com/embed/\(videoKey)?playsinline=1&autoplay=1&rel=0") else {
-            return
-        }
-        // Reload only if the key changed, so SwiftUI re-renders don't restart it.
-        if webView.url != url {
-            webView.load(URLRequest(url: url))
-        }
+        guard context.coordinator.loadedKey != videoKey else { return }
+        context.coordinator.loadedKey = videoKey
+
+        // Load the embed inside an HTML iframe with a real origin baseURL, rather
+        // than navigating to the embed URL directly — that gives YouTube a valid
+        // origin/referer and avoids the "153" player configuration error.
+        let html = """
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <style>
+              * { margin: 0; padding: 0; }
+              html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+              iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+            </style>
+          </head>
+          <body>
+            <iframe
+              src="https://www.youtube-nocookie.com/embed/\(videoKey)?playsinline=1&autoplay=1&rel=0"
+              frameborder="0"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowfullscreen>
+            </iframe>
+          </body>
+        </html>
+        """
+        webView.loadHTMLString(html, baseURL: URL(string: "https://www.youtube.com"))
     }
 }
 
