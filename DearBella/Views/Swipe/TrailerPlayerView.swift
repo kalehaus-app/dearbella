@@ -1,9 +1,9 @@
 import SwiftUI
 import WebKit
 
-/// A WebKit-backed YouTube player. Loads the privacy-friendly embed URL for a
-/// video key and plays it inline (no third-party packages). Used only by
-/// `MovieDetailView`'s "Play Trailer" button.
+/// A WebKit-backed YouTube player. Embeds the trailer in an HTML iframe and
+/// plays it inline (no third-party packages). Used only by `MovieDetailView`'s
+/// "Play Trailer" button.
 struct YouTubeWebView: UIViewRepresentable {
     let videoKey: String
 
@@ -36,23 +36,25 @@ struct YouTubeWebView: UIViewRepresentable {
 
         // Load the embed inside an HTML iframe with a real origin baseURL, rather
         // than navigating to the embed URL directly — that gives YouTube a valid
-        // origin/referer and avoids the "153" player configuration error.
+        // origin/referer and avoids the "153" player configuration error. Using
+        // youtube.com (not the stricter -nocookie host) avoids "152" unavailable.
         let html = """
         <!DOCTYPE html>
         <html>
           <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-              * { margin: 0; padding: 0; }
-              html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
-              iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+              html, body { margin: 0; padding: 0; background: #000; height: 100%; }
+              iframe { display: block; width: 100%; height: 100%; border: 0; }
             </style>
           </head>
           <body>
             <iframe
-              src="https://www.youtube-nocookie.com/embed/\(videoKey)?playsinline=1&autoplay=1&rel=0"
+              width="100%"
+              height="100%"
+              src="https://www.youtube.com/embed/\(videoKey)?playsinline=1&autoplay=1&rel=0&modestbranding=1&enablejsapi=1"
               frameborder="0"
-              allow="autoplay; encrypted-media; picture-in-picture"
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
               allowfullscreen>
             </iframe>
           </body>
