@@ -147,8 +147,8 @@ struct TMDBClient: Sendable {
     }
 
     /// The YouTube key for a movie's trailer (from `movie/{id}/videos`), or
-    /// `nil` if there's no YouTube trailer / on failure. Prefers an official
-    /// trailer, then any trailer, then any YouTube clip.
+    /// `nil` if there's no YouTube trailer / on failure. Considers only YouTube
+    /// videos of type "Trailer", preferring an official one when flagged.
     func trailerYouTubeKey(id: Int) async -> String? {
         guard var components = URLComponents(string: baseURL) else { return nil }
 
@@ -169,10 +169,9 @@ struct TMDBClient: Sendable {
                 return nil
             }
             let videos = try JSONDecoder().decode(Response.self, from: data).results
-            let youTube = videos.filter { $0.site == "YouTube" }
-            return youTube.first { $0.type == "Trailer" && ($0.official ?? false) }?.key
-                ?? youTube.first { $0.type == "Trailer" }?.key
-                ?? youTube.first?.key
+            let trailers = videos.filter { $0.site == "YouTube" && $0.type == "Trailer" }
+            return trailers.first { $0.official ?? false }?.key
+                ?? trailers.first?.key
         } catch {
             return nil
         }

@@ -9,6 +9,7 @@ struct MovieDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var trailerKey: String?
     @State private var trailerLoaded = false
+    @State private var showTrailer = false
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -60,12 +61,17 @@ struct MovieDetailView: View {
             trailerLoaded = true
             trailerKey = await TMDBClient.shared.trailerYouTubeKey(id: movie.id)
         }
+        .fullScreenCover(isPresented: $showTrailer) {
+            if let key = trailerKey {
+                TrailerPlayerView(videoKey: key)
+            }
+        }
     }
 
     @ViewBuilder
     private var trailerButton: some View {
-        if let key = trailerKey, let url = URL(string: "https://www.youtube.com/watch?v=\(key)") {
-            Link(destination: url) {
+        if trailerKey != nil {
+            Button { showTrailer = true } label: {
                 Label("Play Trailer", systemImage: "play.fill")
                     .font(.dearBellaButton)
                     .foregroundStyle(Theme.ink)
@@ -74,6 +80,7 @@ struct MovieDetailView: View {
                     .background(Theme.cyan)
                     .clipShape(Capsule())
             }
+            .buttonStyle(.plain)
         } else if !trailerLoaded {
             Label("Loading trailer…", systemImage: "play.fill")
                 .font(.dearBellaButton)
