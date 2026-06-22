@@ -69,7 +69,7 @@ struct BracketGenrePicker: View {
         case "Adventure":   return "map.fill"
         case "Animation":   return "sparkles"
         case "Comedy":      return "theatermasks.fill"
-        case "Crime":       return "fingerprint"
+        case "Crime":       return "exclamationmark.shield.fill"
         case "Documentary": return "doc.fill"
         case "Drama":       return "theatermasks"
         case "Family":      return "person.3.fill"
