@@ -87,6 +87,32 @@ struct TMDBClient: Sendable {
         }
     }
 
+    /// Popular movies in a genre (`discover/movie`, sorted by popularity,
+    /// filtered to `genreID`). Returns `[]` on failure.
+    func discoverMovies(genreID: Int, page: Int = 1) async -> [TMDBMovie] {
+        guard var components = URLComponents(string: baseURL) else { return [] }
+
+        components.queryItems = [
+            URLQueryItem(name: "path", value: "discover/movie"),
+            URLQueryItem(name: "with_genres", value: String(genreID)),
+            URLQueryItem(name: "sort_by", value: "popularity.desc"),
+            URLQueryItem(name: "include_adult", value: "false"),
+            URLQueryItem(name: "vote_count.gte", value: "100"),
+            URLQueryItem(name: "page", value: String(page)),
+        ]
+        guard let url = components.url else { return [] }
+
+        do {
+            let (data, response) = try await session.data(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                return []
+            }
+            return try JSONDecoder().decode(TMDBSearchResponse.self, from: data).results
+        } catch {
+            return []
+        }
+    }
+
     /// A single movie's runtime in minutes (from `movie/{id}`). The popular
     /// list doesn't include runtime, so we fetch it lazily per surfaced card.
     func movieRuntime(id: Int) async -> Int? {

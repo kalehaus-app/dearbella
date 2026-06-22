@@ -20,6 +20,11 @@ struct MainTabView: View {
                 .tabItem {
                     Label("Swipe", systemImage: "rectangle.stack")
                 }
+
+            BracketView()
+                .tabItem {
+                    Label("Bracket", systemImage: "trophy")
+                }
         }
         .tint(Theme.cyan)
     }

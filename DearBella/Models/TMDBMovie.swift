@@ -43,4 +43,13 @@ enum TMDBGenre {
     ]
 
     static func name(for id: Int) -> String? { names[id] }
+
+    /// Selectable movie genres (id + name), sorted by name — for the bracket
+    /// genre picker. Excludes the non-feature "TV Movie" bucket.
+    static var all: [(id: Int, name: String)] {
+        names
+            .filter { $0.value != "TV Movie" }
+            .map { (id: $0.key, name: $0.value) }
+            .sorted { $0.name < $1.name }
+    }
 }
