@@ -2,14 +2,15 @@ import SwiftUI
 
 /// Detail screen opened by tapping a swipe card: large poster, full info, and a
 /// "Play Trailer" button (TMDB videos → YouTube). The trailer key loads on
-/// appear; the button is disabled while loading and hidden if none is found.
+/// appear; the button opens YouTube externally, shows "Loading trailer…" while
+/// fetching, and falls back to "No trailer available" if none is found.
 struct MovieDetailView: View {
     let movie: SwipeMovie
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @State private var trailerKey: String?
     @State private var trailerLoaded = false
-    @State private var showTrailer = false
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -61,17 +62,12 @@ struct MovieDetailView: View {
             trailerLoaded = true
             trailerKey = await TMDBClient.shared.trailerYouTubeKey(id: movie.id)
         }
-        .fullScreenCover(isPresented: $showTrailer) {
-            if let key = trailerKey {
-                TrailerPlayerView(videoKey: key)
-            }
-        }
     }
 
     @ViewBuilder
     private var trailerButton: some View {
-        if trailerKey != nil {
-            Button { showTrailer = true } label: {
+        if let key = trailerKey, let url = URL(string: "https://www.youtube.com/watch?v=\(key)") {
+            Button { openURL(url) } label: {
                 Label("Play Trailer", systemImage: "play.fill")
                     .font(.dearBellaButton)
                     .foregroundStyle(Theme.ink)
