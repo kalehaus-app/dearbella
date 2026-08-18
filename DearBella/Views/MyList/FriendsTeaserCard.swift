@@ -3,16 +3,29 @@ import SwiftUI
 /// Advertises the Friends feature before it exists, and measures whether
 /// anyone actually wants it.
 ///
-/// "Notify me" is recorded on-device so the card can acknowledge the tap
-/// straight away and stay acknowledged. If a waitlist form is configured it
-/// also opens, which is where a real signal (and a way to reach people when it
-/// ships) comes from — but the card works fine without one, so the teaser can
-/// go live before the form exists.
+/// "Notify me" is recorded on-device, so once someone has answered, the card
+/// thanks them and then retires itself — an ad for something you've already
+/// signed up for is just clutter on a screen you visit often. If a waitlist
+/// form is configured it also opens, which is where a real signal (and a way
+/// to reach people when it ships) comes from, but the card works fine without
+/// one so the teaser can go live before the form exists.
 struct FriendsTeaserCard: View {
     @AppStorage("friends.notifyMe") private var isOnWaitlist = false
     @Environment(\.openURL) private var openURL
 
+    /// Shows the thank-you for a moment before the card goes. Separate from
+    /// `isOnWaitlist` so returning to this screen later skips the animation
+    /// and simply renders nothing.
+    @State private var isDismissing = false
+
     var body: some View {
+        if !isOnWaitlist || isDismissing {
+            card
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+        }
+    }
+
+    private var card: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 Image(systemName: "person.2.fill")
@@ -58,8 +71,16 @@ struct FriendsTeaserCard: View {
                 .padding(.top, 2)
         } else {
             Button {
-                isOnWaitlist = true
                 if let url = ExternalLinks.friendsWaitlist { openURL(url) }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isDismissing = true
+                    isOnWaitlist = true
+                }
+                // Long enough to read the thank-you, short enough not to nag.
+                Task {
+                    try? await Task.sleep(nanoseconds: 2_200_000_000)
+                    withAnimation(.easeInOut(duration: 0.35)) { isDismissing = false }
+                }
             } label: {
                 Text("Notify me")
                     .font(.inter(14, weight: .semibold))
