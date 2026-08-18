@@ -67,7 +67,7 @@ struct MyListView: View {
                         shelf
                         Divider().background(Theme.cream.opacity(0.1)).padding(.horizontal, 20)
                         RecommendationsSection(viewModel: viewModel, context: tasteContext)
-                        FriendsTeaserCard()
+                        footer
                     }
                     .padding(.bottom, 24)
                 }
@@ -156,6 +156,15 @@ struct MyListView: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 20)
+    }
+
+    /// What sits below the films: what's coming, and a way to say what should
+    /// come next. Grouped, like `shelf`, to keep the body clear of
+    /// `ViewBuilder`'s ten-child limit.
+    @ViewBuilder
+    private var footer: some View {
+        FriendsTeaserCard()
+        FeedbackLink(source: "ios-my-list")
     }
 
     /// The selected shelf: what Bella has learned (on Watched), then the films

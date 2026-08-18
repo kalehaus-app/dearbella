@@ -120,7 +120,7 @@ struct AboutView: View {
     /// there's never a link here that goes nowhere.
     @ViewBuilder
     private var feedbackRow: some View {
-        if let url = ExternalLinks.feedbackForm {
+        if let url = ExternalLinks.feedbackForm(source: "ios-about") {
             VStack(alignment: .leading, spacing: 8) {
                 Link(destination: url) {
                     HStack {
