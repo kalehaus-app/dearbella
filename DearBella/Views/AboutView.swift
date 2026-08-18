@@ -1,9 +1,11 @@
 import SwiftUI
 
-/// About / settings screen: TMDB attribution (required), a Privacy Policy link,
-/// and the app version. Presented as a sheet from the Home header.
+/// About / settings screen: hidden-film management, TMDB attribution
+/// (required), a Privacy Policy link, and the app version. Presented as a
+/// sheet from the Home header.
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var hidden: HiddenFilmsStore
 
     private let privacyURL = URL(string: "https://dearbella-site.vercel.app")!
 
@@ -25,6 +27,8 @@ struct AboutView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     header
+                    hiddenFilmsSection
+                    Divider().background(Theme.cream.opacity(0.12))
                     tmdbAttribution
                     Divider().background(Theme.cream.opacity(0.12))
                     privacyRow
@@ -53,6 +57,46 @@ struct AboutView: View {
                     .foregroundStyle(Theme.cream.opacity(0.6))
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    /// Lets the user take back a "don't suggest this again" — without this the
+    /// hide action would be a one-way door.
+    @ViewBuilder
+    private var hiddenFilmsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Hidden films")
+                    .font(.dmSerif(22, relativeTo: .title3))
+                    .foregroundStyle(Theme.cream)
+                Spacer()
+                if !hidden.isEmpty {
+                    Button("Unhide all") { hidden.unhideAll() }
+                        .font(.inter(13, weight: .medium))
+                        .foregroundStyle(Theme.cyan)
+                }
+            }
+
+            if hidden.isEmpty {
+                Text("Films you tell Bella to stop suggesting will show up here, so you can bring them back.")
+                    .font(.dearBellaCaption)
+                    .foregroundStyle(Theme.cream.opacity(0.6))
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ForEach(hidden.films) { film in
+                    HStack(spacing: 12) {
+                        Text(film.displayTitle)
+                            .font(.dearBellaBody)
+                            .foregroundStyle(Theme.cream)
+                            .lineLimit(2)
+                        Spacer(minLength: 8)
+                        Button("Unhide") { hidden.unhide(film) }
+                            .font(.inter(13, weight: .semibold))
+                            .foregroundStyle(Theme.cyan)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
         }
     }
 
@@ -91,4 +135,5 @@ struct AboutView: View {
 
 #Preview {
     AboutView()
+        .environmentObject(HiddenFilmsStore.shared)
 }

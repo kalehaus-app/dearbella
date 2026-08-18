@@ -6,6 +6,8 @@ import SwiftUI
 /// fetching, and falls back to "No trailer available" if none is found.
 struct MovieDetailView: View {
     let movie: SwipeMovie
+    /// Reported back so the deck can drop the card, not just the store.
+    var onHide: ((SwipeMovie) -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
@@ -50,6 +52,12 @@ struct MovieDetailView: View {
                             .foregroundStyle(Theme.cream.opacity(0.85))
                             .lineSpacing(3)
                     }
+
+                    HideFilmButton(title: movie.title) {
+                        onHide?(movie)
+                        dismiss()
+                    }
+                    .padding(.top, 4)
                 }
                 .padding(20)
                 .padding(.top, 40)

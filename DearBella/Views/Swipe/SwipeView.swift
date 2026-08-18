@@ -29,7 +29,7 @@ struct SwipeView: View {
             }
         }
         .fullScreenCover(item: $detailMovie) { movie in
-            MovieDetailView(movie: movie)
+            MovieDetailView(movie: movie) { viewModel.hide($0) }
         }
     }
 

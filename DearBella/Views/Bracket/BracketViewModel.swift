@@ -23,6 +23,7 @@ final class BracketViewModel: ObservableObject {
 
     private var nextRound: [SwipeMovie] = []
     private let tmdb = TMDBClient.shared
+    private let hidden = HiddenFilmsStore.shared
 
     let totalRounds = 3
 
@@ -53,7 +54,8 @@ final class BracketViewModel: ObservableObject {
         var seen = Set<Int>()
         for page in 1...2 {
             let movies = await tmdb.discoverMovies(genreID: genreID, page: page)
-            for movie in movies.compactMap(SwipeMovie.init(from:)) where movie.posterPath?.isEmpty == false {
+            for movie in movies.compactMap(SwipeMovie.init(from:))
+            where movie.posterPath?.isEmpty == false && !hidden.isHidden(id: movie.id) {
                 if seen.insert(movie.id).inserted { pool.append(movie) }
             }
             if pool.count >= 24 { break }

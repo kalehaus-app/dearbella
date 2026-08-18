@@ -11,6 +11,7 @@ struct FilmDetailSheet: View {
     let filmID: String
 
     @EnvironmentObject private var watchlist: WatchlistStore
+    @EnvironmentObject private var hidden: HiddenFilmsStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var noteDraft = ""
@@ -194,6 +195,8 @@ struct FilmDetailSheet: View {
 
     private func actions(_ film: SavedFilm) -> some View {
         VStack(spacing: 12) {
+            hideToggle(film)
+
             Link(destination: WatchlistStore.watchURL(for: film)) {
                 Label("Where to watch", systemImage: "play.rectangle.fill")
                     .font(.dearBellaButton)
@@ -229,6 +232,45 @@ struct FilmDetailSheet: View {
             }
         }
         .padding(.top, 4)
+    }
+
+    /// Reversible, unlike the one-way hide button on the swipe and bracket
+    /// cards: from here the film is in front of the user, so a toggle they can
+    /// flip back is friendlier than a confirmation they can't undo.
+    private func hideToggle(_ film: SavedFilm) -> some View {
+        let isHidden = hidden.films.contains { $0.id == film.id }
+
+        return Button {
+            if isHidden {
+                if let entry = hidden.films.first(where: { $0.id == film.id }) {
+                    hidden.unhide(entry)
+                }
+            } else {
+                hidden.hide(film)
+            }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: isHidden ? "eye.slash.fill" : "eye.slash")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(isHidden ? "Hidden from suggestions" : "Don't suggest this again")
+                        .font(.inter(15, weight: .medium))
+                    Text(isHidden
+                         ? "Bella won't bring this up. Tap to undo."
+                         : "Keeps it out of swipes, brackets and Bella's picks.")
+                        .font(.inter(11))
+                        .foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer()
+            }
+            .foregroundStyle(isHidden ? Theme.cyan : Theme.cream.opacity(0.8))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers

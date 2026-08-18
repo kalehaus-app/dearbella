@@ -64,4 +64,5 @@ struct BracketView: View {
 #Preview {
     BracketView()
         .environmentObject(WatchlistStore())
+        .environmentObject(HiddenFilmsStore.shared)
 }

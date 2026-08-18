@@ -14,6 +14,7 @@ final class SwipeDeckViewModel: ObservableObject {
     @Published private(set) var exhausted = false
 
     private let history = SwipeHistoryStore.shared
+    private let hidden = HiddenFilmsStore.shared
     private let tmdb = TMDBClient.shared
     private var page = 0
     private var isFetching = false
@@ -60,6 +61,7 @@ final class SwipeDeckViewModel: ObservableObject {
                     // otherwise show (and save) as a blank gradient.
                     movie.posterPath?.isEmpty == false
                         && !history.hasSeen(movie.id)
+                        && !hidden.isHidden(id: movie.id)
                         && !deck.contains { $0.id == movie.id }
                 }
 
@@ -81,6 +83,14 @@ final class SwipeDeckViewModel: ObservableObject {
     }
 
     func pass(_ movie: SwipeMovie) {
+        history.recordPass(movie.id)
+        advance(past: movie)
+    }
+
+    /// "Don't suggest this again": keeps the film out of future fetches and
+    /// drops it from the deck now, so it doesn't sit there until it's swiped.
+    func hide(_ movie: SwipeMovie) {
+        hidden.hide(movie)
         history.recordPass(movie.id)
         advance(past: movie)
     }

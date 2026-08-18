@@ -9,6 +9,7 @@ struct BracketMovieDetailSheet: View {
     let onChoose: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var hidden: HiddenFilmsStore
 
     var body: some View {
         ZStack {
@@ -48,6 +49,17 @@ struct BracketMovieDetailSheet: View {
 
                     chooseButton
                         .padding(.top, 8)
+
+                    // Hiding doesn't withdraw it from the bracket already in
+                    // play — that would leave a matchup with one side — but it
+                    // won't be drawn into another one.
+                    HideFilmButton(
+                        title: movie.title,
+                        label: "Don't put this in brackets again"
+                    ) {
+                        hidden.hide(movie)
+                        dismiss()
+                    }
                 }
                 .padding(20)
             }

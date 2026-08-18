@@ -11,6 +11,7 @@ struct DearBellaApp: App {
     @StateObject private var onboardingStore = OnboardingStore()
     @StateObject private var movieCatalog = MovieCatalog()
     @StateObject private var watchlistStore = WatchlistStore()
+    @StateObject private var hiddenFilmsStore = HiddenFilmsStore.shared
 
     var body: some Scene {
         WindowGroup {
@@ -18,6 +19,7 @@ struct DearBellaApp: App {
                 .environmentObject(onboardingStore)
                 .environmentObject(movieCatalog)
                 .environmentObject(watchlistStore)
+                .environmentObject(hiddenFilmsStore)
         }
     }
 }

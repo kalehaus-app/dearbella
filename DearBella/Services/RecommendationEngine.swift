@@ -15,6 +15,14 @@ struct RecommendationEngine {
     of "Films you'll love if you liked Carrie." You never pad. You only recommend \
     real films that actually exist. Always tailor picks to the user's taste profile \
     and current mood, and never recommend a film in the exclude list.
+
+    The taste profile is built from what they've actually recorded, so weigh it \
+    in that order: their own notes are the most specific signal, then films they \
+    loved or rated highly, then what they merely saved. Films they did not enjoy \
+    are a hard steer away — don't recommend those films, and don't recommend \
+    near-neighbours of them either. When their history clearly points somewhere, \
+    let the reason say so ("you rated Hereditary 5 stars, so…") rather than \
+    describing the film in the abstract.
     """
 
     // MARK: - Recommendations
@@ -26,16 +34,17 @@ struct RecommendationEngine {
         referenceFilm: String?,
         exclude: [String]
     ) async throws -> RecommendationResult {
+        let avoid = await Self.blocked(context, plus: exclude)
+
         let prompt = """
         Taste profile:
-        - Favorite genres: \(list(context.genres))
-        - Top films: \(list(context.topFilms))
+        \(profile(context))
 
         Current request:
         - In the mood for: \(moodPick ?? "anything good")
         - How they're feeling: \(feeling ?? "not specified")
         - Wants something similar to: \(referenceFilm ?? "not specified")
-        - Do NOT recommend (already shown or owned): \(list(exclude))
+        - Do NOT recommend (already shown, saved, hidden, or disliked): \(list(avoid))
 
         Recommend exactly 3 films that fit. One witty sentence per reason.
         """
@@ -96,14 +105,16 @@ struct RecommendationEngine {
     /// one-line reason in Bella's voice. `exclude` lists titles to avoid (already
     /// shown today / saved).
     func dailyPick(context: TasteContext, exclude: [String]) async throws -> RecommendedFilm? {
+        let avoid = await Self.blocked(context, plus: exclude)
+
         let prompt = """
         Based on this person's taste, pick exactly ONE film for them to watch
         tonight.
-        - Favorite genres: \(list(context.genres))
-        - Films they love: \(list(context.topFilms))
-        Do NOT pick any of these (already shown or saved): \(list(exclude))
+        \(profile(context))
+        Do NOT pick any of these (already shown, saved, hidden, or disliked): \(list(avoid))
         Give a short, witty, personal one-line reason in your voice, as if you
         know them — e.g. "You told me you love a slow-burn ache, trust me tonight."
+        If their ratings or notes justify the pick, say so in that one line.
         """
 
         let tool = ClaudeTool(
@@ -144,12 +155,13 @@ struct RecommendationEngine {
 
     func tasteSummary(context: TasteContext) async throws -> String {
         let prompt = """
-        The user's saved films: \(list(context.topFilms))
-        Genres across their list: \(list(context.genres))
+        \(profile(context))
 
         Write a short, witty one or two sentence summary of their movie taste, in \
         DearBella's voice — e.g. "Based on your list, you're into quirky indie \
-        comedies and emotional sci-fi." Address them as "you".
+        comedies and emotional sci-fi." Address them as "you". If they've rated or \
+        written about films, draw on that rather than the genre list alone — it's \
+        the part that actually sounds like them.
         """
 
         let tool = ClaudeTool(
@@ -176,5 +188,42 @@ struct RecommendationEngine {
 
     private func list(_ items: [String]) -> String {
         items.isEmpty ? "none" : items.joined(separator: ", ")
+    }
+
+    /// Renders everything we know about the user's taste. Sections with no data
+    /// are left out entirely, so a brand-new user's prompt stays short and gets
+    /// richer as they rate things — nothing is ever described as "none" when
+    /// the truth is "not yet".
+    private func profile(_ context: TasteContext) -> String {
+        var lines = [
+            "- Favorite genres: \(list(context.genres))",
+            "- Films on their list: \(list(context.topFilms))"
+        ]
+        if !context.loved.isEmpty {
+            lines.append("- LOVED, weight these heaviest: \(list(context.loved))")
+        }
+        if !context.liked.isEmpty {
+            lines.append("- Liked: \(list(context.liked))")
+        }
+        if !context.disliked.isEmpty {
+            lines.append("- DID NOT ENJOY, steer well clear: \(list(context.disliked))")
+        }
+        if !context.ratings.isEmpty {
+            lines.append("- Their ratings: \(list(context.ratings))")
+        }
+        if !context.notes.isEmpty {
+            lines.append("- Their own notes on films they've seen:")
+            lines.append(contentsOf: context.notes.map { "  · \($0)" })
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Everything Claude must not suggest: the caller's list plus every film
+    /// the user told us they didn't enjoy, plus everything they've hidden.
+    @MainActor
+    private static func blocked(_ context: TasteContext, plus exclude: [String]) -> [String] {
+        var seen = Set<String>()
+        return (exclude + context.disliked + HiddenFilmsStore.shared.excludeTitles)
+            .filter { seen.insert($0.lowercased()).inserted }
     }
 }

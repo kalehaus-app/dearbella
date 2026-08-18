@@ -11,13 +11,17 @@ struct HomeView: View {
     @State private var recentMovies: [SwipeMovie] = []
     @State private var didLoadRecent = false
 
-    /// The user's saved genres + top films, used to personalize Claude calls.
+    /// Everything the user has told us — what they rated and reacted to in My
+    /// List, seeded with their onboarding picks — used to personalize Claude
+    /// calls.
     private var tasteContext: TasteContext {
-        let genreNames = SampleData.genres
-            .filter { store.selectedGenreIDs.contains($0.id) }
-            .map(\.name)
-        let filmTitles = store.selectedFilms.map(\.title)
-        return TasteContext(genres: genreNames, topFilms: filmTitles)
+        TasteContext(
+            films: watchlist.films,
+            onboardingGenres: SampleData.genres
+                .filter { store.selectedGenreIDs.contains($0.id) }
+                .map(\.name),
+            onboardingFilms: store.selectedFilms.map(\.title)
+        )
     }
 
     var body: some View {
@@ -40,6 +44,7 @@ struct HomeView: View {
         }
         .sheet(isPresented: $showAbout) {
             AboutView()
+                .environmentObject(HiddenFilmsStore.shared)
         }
         .alert("Coming soon", isPresented: $showComingSoon) {
             Button("OK", role: .cancel) {}

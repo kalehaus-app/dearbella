@@ -42,12 +42,19 @@ struct TasteContext {
         self.notes = notes
     }
 
-    /// Builds a full taste profile from the user's saved library.
+    /// Builds a full taste profile from the user's saved library, optionally
+    /// seeded with what they picked during onboarding.
     ///
     /// Archived films are kept in the profile — deciding not to watch something
     /// still says something about taste — but a film the user disliked never
-    /// contributes to their preferred genres.
-    init(films: [SavedFilm]) {
+    /// contributes to their preferred genres. The onboarding picks come last in
+    /// both lists: they're a stated preference, and what someone actually
+    /// watched and rated is the better evidence.
+    init(
+        films: [SavedFilm],
+        onboardingGenres: [String] = [],
+        onboardingFilms: [String] = []
+    ) {
         let opinionated = films.filter { $0.hasTasteSignal }
 
         loved = Self.titles(of: opinionated.filter { Self.sentiment(of: $0) == .loved })
@@ -72,15 +79,17 @@ struct TasteContext {
         for film in positive {
             for genre in film.genres { counts[genre, default: 0] += 1 }
         }
-        genres = counts
+        let learnedGenres = counts
             .sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }
             .prefix(8)
             .map(\.key)
+        genres = Self.merged(learnedGenres, onboardingGenres, limit: 12)
 
         // Films they felt strongest about lead, so a long list still opens
         // with its most informative entries.
         let ranked = films.sorted { Self.weight(of: $0) > Self.weight(of: $1) }
-        topFilms = Self.titles(of: Array(ranked.prefix(25)))
+        let learnedFilms = Self.titles(of: Array(ranked.prefix(25)))
+        topFilms = Self.merged(learnedFilms, onboardingFilms, limit: 30)
     }
 
     // MARK: Derivation
@@ -119,6 +128,16 @@ struct TasteContext {
 
     private static func titles(of films: [SavedFilm]) -> [String] {
         films.map(\.displayTitle)
+    }
+
+    /// Appends `extra` after `primary`, dropping case-insensitive duplicates
+    /// and capping the total so prompts don't grow without bound.
+    private static func merged(_ primary: [String], _ extra: [String], limit: Int) -> [String] {
+        var seen = Set<String>()
+        return (primary + extra)
+            .filter { seen.insert($0.lowercased()).inserted }
+            .prefix(limit)
+            .map { $0 }
     }
 }
 

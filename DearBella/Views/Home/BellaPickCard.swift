@@ -13,24 +13,16 @@ struct BellaPickCard: View {
     private let cardBorder = Color(red: 42 / 255, green: 42 / 255, blue: 42 / 255)       // #2A2A2A
     private let streakYellow = Color(red: 1, green: 1, blue: 1 / 255)                    // #FFFF01
 
-    /// Taste signals: onboarding genres/films + saved (incl. swipe-liked) films.
+    /// Taste signals: what they've rated and reacted to, seeded with their
+    /// onboarding genres and films.
     private var tasteContext: TasteContext {
-        var genres = Set<String>()
-        var films: [String] = []
-
-        genres.formUnion(
-            SampleData.genres.filter { store.selectedGenreIDs.contains($0.id) }.map(\.name)
+        TasteContext(
+            films: watchlist.films,
+            onboardingGenres: SampleData.genres
+                .filter { store.selectedGenreIDs.contains($0.id) }
+                .map(\.name),
+            onboardingFilms: store.selectedFilms.map(\.title)
         )
-        films += store.selectedFilms.map(\.title)
-
-        for film in watchlist.films {
-            genres.formUnion(film.genres)
-            films.append(film.title)
-        }
-
-        var seen = Set<String>()
-        let uniqueFilms = films.filter { seen.insert($0).inserted }
-        return TasteContext(genres: genres.sorted(), topFilms: Array(uniqueFilms.prefix(20)))
     }
 
     var body: some View {

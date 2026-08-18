@@ -90,6 +90,7 @@ struct MyListView: View {
         .sheet(item: $sheetTarget) { target in
             FilmDetailSheet(filmID: target.id)
                 .environmentObject(watchlist)
+                .environmentObject(HiddenFilmsStore.shared)
         }
         .fullScreenCover(isPresented: $showShareCard) {
             ShareCardSheet(films: ShareCardData.topTitles(from: watchlist.films))

@@ -39,6 +39,7 @@ struct BracketMatchupView: View {
                     viewModel.choose(movie)
                 }
             }
+            .environmentObject(HiddenFilmsStore.shared)
         }
     }
 
