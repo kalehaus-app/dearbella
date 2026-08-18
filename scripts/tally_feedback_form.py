@@ -93,13 +93,13 @@ def call(method, path, body=None):
 # if the API rejects the payload, the fix belongs here and nowhere else.
 # --------------------------------------------------------------------------
 
-# Blocks that collect an answer. Only these carry the positional flags below;
-# layout blocks (FORM_TITLE, TITLE, TEXT, HIDDEN_FIELDS) reject them outright.
-QUESTION_TYPES = {
-    "INPUT_TEXT", "TEXTAREA", "INPUT_EMAIL", "INPUT_NUMBER", "INPUT_LINK",
-    "INPUT_PHONE_NUMBER", "INPUT_DATE", "INPUT_TIME",
-    "MULTIPLE_CHOICE_OPTION", "CHECKBOX", "DROPDOWN_OPTION",
-    "RATING", "LINEAR_SCALE", "RANKING",
+# Blocks that repeat within a group — the individual choices of a multi-option
+# question. Only these carry the positional flags below, since those flags
+# delimit a list. Everything else rejects them: layout blocks because they are
+# not answers at all, and single inputs like TEXTAREA because one block is the
+# whole question and there is no list to delimit.
+OPTION_TYPES = {
+    "MULTIPLE_CHOICE_OPTION", "CHECKBOX", "DROPDOWN_OPTION", "RANKING_OPTION",
 }
 
 
@@ -108,18 +108,16 @@ def new_uuid():
 
 
 def normalize(blocks):
-    """Stamps each answer block's position within its group.
+    """Stamps each option's position within its group.
 
-    A question is a title block plus one block per option sharing a groupUuid,
-    and Tally uses these flags to know where one question's options end and the
-    next question begins. They belong only on the blocks that collect an
-    answer — layout blocks reject them as unknown fields — so the type is
-    checked before stamping. Deriving the flags from the assembled list means
-    the builders below never track position by hand, and a question that is a
-    single block correctly gets both.
+    A multi-option question is a title block plus one block per option sharing
+    a groupUuid, and Tally uses these flags to know where that list of options
+    starts and ends. Only the option blocks take them; everything else rejects
+    them as unknown fields. Deriving the flags from the assembled list means
+    the builders below never track position by hand.
     """
     for index, current in enumerate(blocks):
-        if current["type"] not in QUESTION_TYPES:
+        if current["type"] not in OPTION_TYPES:
             continue
         previous = blocks[index - 1]["groupUuid"] if index > 0 else None
         following = blocks[index + 1]["groupUuid"] if index < len(blocks) - 1 else None
