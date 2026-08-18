@@ -93,21 +93,34 @@ def call(method, path, body=None):
 # if the API rejects the payload, the fix belongs here and nowhere else.
 # --------------------------------------------------------------------------
 
+# Blocks that collect an answer. Only these carry the positional flags below;
+# layout blocks (FORM_TITLE, TITLE, TEXT, HIDDEN_FIELDS) reject them outright.
+QUESTION_TYPES = {
+    "INPUT_TEXT", "TEXTAREA", "INPUT_EMAIL", "INPUT_NUMBER", "INPUT_LINK",
+    "INPUT_PHONE_NUMBER", "INPUT_DATE", "INPUT_TIME",
+    "MULTIPLE_CHOICE_OPTION", "CHECKBOX", "DROPDOWN_OPTION",
+    "RATING", "LINEAR_SCALE", "RANKING",
+}
+
+
 def new_uuid():
     return str(uuid.uuid4())
 
 
 def normalize(blocks):
-    """Stamps each block's position within its group.
+    """Stamps each answer block's position within its group.
 
-    Tally validates that every block declares whether it opens and closes its
-    group — a question is a title block plus one block per option sharing a
-    groupUuid, and these flags are how it knows where one question ends and the
-    next begins. Deriving them from the assembled list means the builders below
-    never have to track it by hand, and a block that is a group of its own
-    correctly gets both.
+    A question is a title block plus one block per option sharing a groupUuid,
+    and Tally uses these flags to know where one question's options end and the
+    next question begins. They belong only on the blocks that collect an
+    answer — layout blocks reject them as unknown fields — so the type is
+    checked before stamping. Deriving the flags from the assembled list means
+    the builders below never track position by hand, and a question that is a
+    single block correctly gets both.
     """
     for index, current in enumerate(blocks):
+        if current["type"] not in QUESTION_TYPES:
+            continue
         previous = blocks[index - 1]["groupUuid"] if index > 0 else None
         following = blocks[index + 1]["groupUuid"] if index < len(blocks) - 1 else None
         current["payload"]["isFirst"] = current["groupUuid"] != previous
