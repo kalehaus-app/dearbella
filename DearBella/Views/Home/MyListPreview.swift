@@ -7,13 +7,19 @@ import SwiftUI
 struct MyListPreview: View {
     @EnvironmentObject private var watchlist: WatchlistStore
 
+    /// Only films still waiting to be watched. Home is a "what do I watch
+    /// tonight" surface, so films already seen or archived would be noise.
+    private var upcoming: [SavedFilm] {
+        watchlist.films(in: .watchlist)
+    }
+
     var body: some View {
-        if !watchlist.films.isEmpty {
+        if !upcoming.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 SectionTitle(text: "My List")
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(watchlist.films) { film in
+                        ForEach(upcoming) { film in
                             Link(destination: WatchlistStore.watchURL(for: film)) {
                                 VStack(alignment: .leading, spacing: 6) {
                                     PosterImage(posterPath: film.posterPath, seed: film.title)
