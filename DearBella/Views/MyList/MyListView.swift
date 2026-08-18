@@ -71,6 +71,7 @@ struct MyListView: View {
                         }
                         Divider().background(Theme.cream.opacity(0.1)).padding(.horizontal, 20)
                         RecommendationsSection(viewModel: viewModel, context: tasteContext)
+                        FriendsTeaserCard()
                     }
                     .padding(.bottom, 24)
                 }

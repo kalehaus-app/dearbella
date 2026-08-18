@@ -31,6 +31,7 @@ struct AboutView: View {
                     Divider().background(Theme.cream.opacity(0.12))
                     tmdbAttribution
                     Divider().background(Theme.cream.opacity(0.12))
+                    feedbackRow
                     privacyRow
                     if let appVersion {
                         Text("Version \(appVersion)")
@@ -112,6 +113,35 @@ struct AboutView: View {
                 .font(.dearBellaBody)
                 .foregroundStyle(Theme.cream)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// Hidden entirely until a Tally form URL is set in `ExternalLinks`, so
+    /// there's never a link here that goes nowhere.
+    @ViewBuilder
+    private var feedbackRow: some View {
+        if let url = ExternalLinks.feedbackForm {
+            VStack(alignment: .leading, spacing: 8) {
+                Link(destination: url) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Share your feedback")
+                                .font(.dearBellaBody)
+                                .foregroundStyle(Theme.cream)
+                            Text("Two minutes, and it shapes what gets built next.")
+                                .font(.dearBellaCaption)
+                                .foregroundStyle(Theme.cream.opacity(0.6))
+                        }
+                        Spacer(minLength: 8)
+                        Image(systemName: "arrow.up.right")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.cyan)
+                    }
+                    .padding(.vertical, 8)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
