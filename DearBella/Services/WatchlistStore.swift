@@ -1,44 +1,9 @@
 import Foundation
 
-/// A film the user saved to their watchlist.
-struct SavedFilm: Identifiable, Codable, Equatable {
-    let id: String          // stable key (TMDB id, or title-year fallback)
-    let title: String
-    let year: Int?
-    let posterPath: String?
-    let tmdbID: Int?
-    let genres: [String]
-
-    init(
-        id: String,
-        title: String,
-        year: Int?,
-        posterPath: String?,
-        tmdbID: Int?,
-        genres: [String] = []
-    ) {
-        self.id = id
-        self.title = title
-        self.year = year
-        self.posterPath = posterPath
-        self.tmdbID = tmdbID
-        self.genres = genres
-    }
-
-    // Custom decode so films saved before `genres` existed still load.
-    init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        id = try c.decode(String.self, forKey: .id)
-        title = try c.decode(String.self, forKey: .title)
-        year = try c.decodeIfPresent(Int.self, forKey: .year)
-        posterPath = try c.decodeIfPresent(String.self, forKey: .posterPath)
-        tmdbID = try c.decodeIfPresent(Int.self, forKey: .tmdbID)
-        genres = try c.decodeIfPresent([String].self, forKey: .genres) ?? []
-    }
-}
-
 /// Holds the user's saved films and persists them on-device, the same way
 /// `OnboardingStore` saves the genre/film picks.
+///
+/// `SavedFilm` itself lives in `Models/SavedFilm.swift`.
 @MainActor
 final class WatchlistStore: ObservableObject {
     @Published private(set) var films: [SavedFilm] {
@@ -56,6 +21,33 @@ final class WatchlistStore: ObservableObject {
         }
     }
 
+    // MARK: - Slices
+
+    /// Films in one status, newest activity first. Watched films order by when
+    /// they were watched; everything else keeps insertion order (newest saved
+    /// first), which is what `insert(at: 0)` already gives us.
+    func films(in status: FilmStatus) -> [SavedFilm] {
+        let matching = films.filter { $0.status == status }
+        guard status == .watched else { return matching }
+        return matching.sorted {
+            ($0.watchedAt ?? .distantPast) > ($1.watchedAt ?? .distantPast)
+        }
+    }
+
+    func count(of status: FilmStatus) -> Int {
+        films.reduce(into: 0) { total, film in
+            if film.status == status { total += 1 }
+        }
+    }
+
+    /// The current record for a film, so a detail sheet always renders live
+    /// state rather than the copy it was handed when it opened.
+    func film(id: String) -> SavedFilm? {
+        films.first { $0.id == id }
+    }
+
+    // MARK: - Membership
+
     func isSaved(_ id: String) -> Bool {
         films.contains { $0.id == id }
     }
@@ -68,7 +60,7 @@ final class WatchlistStore: ObservableObject {
         }
     }
 
-    /// Removes a film from the list (used by the My List long-press menu).
+    /// Removes a film from the list entirely.
     func remove(_ film: SavedFilm) {
         films.removeAll { $0.id == film.id }
     }
@@ -79,6 +71,63 @@ final class WatchlistStore: ObservableObject {
         guard !isSaved(film.id) else { return }
         films.insert(film, at: 0)
     }
+
+    // MARK: - Taste
+
+    func setStatus(_ status: FilmStatus, for id: String) {
+        modify(id) { film in
+            film.status = status
+            // Reaching "watched" without an explicit date means they marked it
+            // watched now; leaving "watched" clears the date so it can't linger.
+            switch status {
+            case .watched where film.watchedAt == nil: film.watchedAt = Date()
+            case .watchlist, .archived: film.watchedAt = nil
+            default: break
+            }
+        }
+    }
+
+    /// Sets or clears a star rating. Rating something implies you've seen it,
+    /// so this promotes the film to `watched`.
+    func setRating(_ rating: Double?, for id: String) {
+        modify(id) { film in
+            film.rating = rating
+            if rating != nil { markWatched(&film) }
+        }
+    }
+
+    /// Sets or clears the one-tap reaction. Like rating, this implies watched.
+    func setReaction(_ reaction: FilmReaction?, for id: String) {
+        modify(id) { film in
+            film.reaction = reaction
+            if reaction != nil { markWatched(&film) }
+        }
+    }
+
+    func setNote(_ note: String, for id: String) {
+        modify(id) { film in
+            film.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+    }
+
+    /// Moves a film to watched without disturbing a date it already has.
+    private func markWatched(_ film: inout SavedFilm) {
+        guard film.status != .watched else { return }
+        film.status = .watched
+        if film.watchedAt == nil { film.watchedAt = Date() }
+    }
+
+    /// Applies an edit in place. One mutation of `films` means one persist and
+    /// one UI update, however many fields the closure touches.
+    private func modify(_ id: String, _ transform: (inout SavedFilm) -> Void) {
+        guard let index = films.firstIndex(where: { $0.id == id }) else { return }
+        var film = films[index]
+        transform(&film)
+        guard film != films[index] else { return }
+        films[index] = film
+    }
+
+    // MARK: - Backfill
 
     /// One-time, background backfill: for saved films missing genre data
     /// (saved before genres were tracked), look them up on TMDB and update the
@@ -106,10 +155,18 @@ final class WatchlistStore: ObservableObject {
                 year: film.year,
                 posterPath: film.posterPath,
                 tmdbID: film.tmdbID,
-                genres: genres
+                genres: genres,
+                status: film.status,
+                rating: film.rating,
+                reaction: film.reaction,
+                note: film.note,
+                watchedAt: film.watchedAt,
+                addedAt: film.addedAt
             )
         }
     }
+
+    // MARK: - Links
 
     /// A "where to watch" link — the TMDB watch page when we have an id, else a
     /// Google search as a fallback.
