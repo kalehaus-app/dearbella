@@ -191,11 +191,17 @@ def email_question(title, required=False):
     ]
 
 
-def hidden_field(name):
+def hidden_fields(*names):
     """Lets the app tag responses with where they came from (?source=ios),
-    so in-app answers can be told apart from ones shared elsewhere."""
+    so in-app answers can be told apart from ones shared elsewhere.
+
+    All hidden fields live in a single block, as one list — they are form
+    configuration rather than something the respondent sees, so there is no
+    per-field block the way there is for options.
+    """
     group = new_uuid()
-    return [block("HIDDEN_FIELDS", {"name": name}, group, "HIDDEN_FIELDS")]
+    fields = [{"uuid": new_uuid(), "name": name} for name in names]
+    return [block("HIDDEN_FIELDS", {"hiddenFields": fields}, group, "HIDDEN_FIELDS")]
 
 
 # --------------------------------------------------------------------------
@@ -211,7 +217,7 @@ def build_form():
         "what gets built next.",
     )
 
-    blocks += hidden_field("source")
+    blocks += hidden_fields("source")
 
     # Habit — tests whether this really is a weekend product.
     blocks += choice_question(
