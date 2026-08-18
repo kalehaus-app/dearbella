@@ -5,11 +5,14 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var store: OnboardingStore
     @EnvironmentObject private var watchlist: WatchlistStore
+    @EnvironmentObject private var notifications: NotificationService
     @State private var showComingSoon = false
     @State private var showChat = false
     @State private var showAbout = false
     @State private var recentMovies: [SwipeMovie] = []
     @State private var didLoadRecent = false
+
+    private let dailyPickAnchor = "dailyPick"
 
     /// Everything the user has told us — what they rated and reacted to in My
     /// List, seeded with their onboarding picks — used to personalize Claude
@@ -26,15 +29,26 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                header
-                watchTonightPanel
-                newOnDemandSection
-                MyListPreview()
-                BellaPickCard()
+            ScrollViewReader { proxy in
+                VStack(alignment: .leading, spacing: 28) {
+                    header
+                    watchTonightPanel
+                    newOnDemandSection
+                    MyListPreview()
+                    BellaPickCard().id(dailyPickAnchor)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
+                // Arriving from a reminder means they were promised a pick,
+                // so go to it rather than leaving them to scroll for it.
+                .onChange(of: notifications.didOpenFromReminder) { _, fromReminder in
+                    guard fromReminder else { return }
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        proxy.scrollTo(dailyPickAnchor, anchor: .center)
+                    }
+                    notifications.didOpenFromReminder = false
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 40)
         }
         .background(Theme.background.ignoresSafeArea())
         .task { await loadRecentReleases() }
@@ -45,6 +59,7 @@ struct HomeView: View {
         .sheet(isPresented: $showAbout) {
             AboutView()
                 .environmentObject(HiddenFilmsStore.shared)
+                .environmentObject(notifications)
         }
         .alert("Coming soon", isPresented: $showComingSoon) {
             Button("OK", role: .cancel) {}

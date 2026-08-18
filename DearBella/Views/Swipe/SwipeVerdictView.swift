@@ -16,6 +16,7 @@ struct SwipeVerdictView: View {
     @State private var pick: SwipeMovie?
     @State private var blurb: String?
     @State private var isThinking = true
+    @State private var showNotificationPrimer = false
 
     var body: some View {
         ZStack {
@@ -28,6 +29,10 @@ struct SwipeVerdictView: View {
             }
         }
         .task { await decide() }
+        .fullScreenCover(isPresented: $showNotificationPrimer) {
+            NotificationPrimer { showNotificationPrimer = false }
+                .presentationBackground(.clear)
+        }
     }
 
     // MARK: - States
@@ -135,5 +140,13 @@ struct SwipeVerdictView: View {
         // so there's nothing to add here — just the reasoning to fetch.
         blurb = try? await BracketBella.blurb(title: chosen.title, overview: chosen.overview)
         isThinking = false
+
+        // Ask about reminders here, and only here: they've just seen Bella
+        // decide for them, so "want this every Friday?" needs no explaining.
+        await NotificationService.shared.refreshAuthorization()
+        if NotificationService.shared.shouldOfferReminders {
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            showNotificationPrimer = true
+        }
     }
 }

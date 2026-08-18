@@ -6,6 +6,7 @@ import SwiftUI
 struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var hidden: HiddenFilmsStore
+    @EnvironmentObject private var notifications: NotificationService
 
     private let privacyURL = URL(string: "https://dearbella-site.vercel.app")!
 
@@ -27,6 +28,8 @@ struct AboutView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     header
+                    remindersSection
+                    Divider().background(Theme.cream.opacity(0.12))
                     hiddenFilmsSection
                     Divider().background(Theme.cream.opacity(0.12))
                     tmdbAttribution
@@ -59,6 +62,50 @@ struct AboutView: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    /// Reminders can be turned off here rather than only in iOS Settings —
+    /// a weekly nudge people can't stop from inside the app is how an app
+    /// gets its notifications revoked wholesale.
+    private var remindersSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle(isOn: reminderBinding) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Friday & Saturday reminders")
+                        .font(.dearBellaBody)
+                        .foregroundStyle(Theme.cream)
+                    Text("A pick waiting at 6:30, when you're actually deciding.")
+                        .font(.dearBellaCaption)
+                        .foregroundStyle(Theme.cream.opacity(0.6))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .tint(Theme.cyan)
+
+            if notifications.authorization == .denied {
+                Text("Notifications are turned off for Dear Bella in iOS Settings.")
+                    .font(.dearBellaCaption)
+                    .foregroundStyle(Theme.accent.opacity(0.9))
+            }
+        }
+        .task { await notifications.refreshAuthorization() }
+    }
+
+    /// Reflects the real system state, so the toggle can't claim reminders are
+    /// on when iOS has denied them.
+    private var reminderBinding: Binding<Bool> {
+        Binding(
+            get: { notifications.isEnabled },
+            set: { wantsOn in
+                Task {
+                    if wantsOn {
+                        await notifications.enable()
+                    } else {
+                        notifications.disable()
+                    }
+                }
+            }
+        )
     }
 
     /// Lets the user take back a "don't suggest this again" — without this the
@@ -166,4 +213,5 @@ struct AboutView: View {
 #Preview {
     AboutView()
         .environmentObject(HiddenFilmsStore.shared)
+        .environmentObject(NotificationService.shared)
 }
