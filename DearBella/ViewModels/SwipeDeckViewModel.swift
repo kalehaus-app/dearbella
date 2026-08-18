@@ -13,6 +13,18 @@ final class SwipeDeckViewModel: ObservableObject {
     @Published private(set) var error: String?
     @Published private(set) var exhausted = false
 
+    /// Films liked in this sitting. Swiping that only ever adds to a list is
+    /// a deferred decision; once enough cards are in, these become the
+    /// shortlist Bella picks tonight's film from.
+    @Published private(set) var sessionLikes: [SwipeMovie] = []
+    @Published private(set) var isVerdictReady = false
+
+    /// Cards swiped since the last verdict.
+    private var swipesThisSession = 0
+
+    /// Enough cards to have learned something, few enough to still feel quick.
+    private let swipesPerVerdict = 12
+
     private let history = SwipeHistoryStore.shared
     private let hidden = HiddenFilmsStore.shared
     private let tmdb = TMDBClient.shared
@@ -79,12 +91,32 @@ final class SwipeDeckViewModel: ObservableObject {
 
     func like(_ movie: SwipeMovie) {
         history.recordLike(movie.id)
+        sessionLikes.append(movie)
+        countSwipe()
         advance(past: movie)
     }
 
     func pass(_ movie: SwipeMovie) {
         history.recordPass(movie.id)
+        countSwipe()
         advance(past: movie)
+    }
+
+    /// Offers a verdict once the round is up, provided there's something to
+    /// choose between. With no likes there is nothing to decide, so the deck
+    /// just carries on rather than interrupting for an empty result.
+    private func countSwipe() {
+        swipesThisSession += 1
+        guard swipesThisSession >= swipesPerVerdict, !sessionLikes.isEmpty else { return }
+        isVerdictReady = true
+    }
+
+    /// Called when the verdict is dismissed: clears the shortlist so the next
+    /// round starts fresh rather than re-picking from old likes.
+    func startNewRound() {
+        isVerdictReady = false
+        swipesThisSession = 0
+        sessionLikes = []
     }
 
     /// "Don't suggest this again": keeps the film out of future fetches and

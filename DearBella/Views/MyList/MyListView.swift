@@ -64,11 +64,7 @@ struct MyListView: View {
                         if !presentGenres.isEmpty {
                             GenreFilterPills(genres: presentGenres, selected: $selectedGenre)
                         }
-                        if filteredFilms.isEmpty {
-                            statusEmptyState
-                        } else {
-                            grid
-                        }
+                        shelf
                         Divider().background(Theme.cream.opacity(0.1)).padding(.horizontal, 20)
                         RecommendationsSection(viewModel: viewModel, context: tasteContext)
                         FriendsTeaserCard()
@@ -162,6 +158,21 @@ struct MyListView: View {
         .padding(.horizontal, 20)
     }
 
+    /// The selected shelf: what Bella has learned (on Watched), then the films
+    /// themselves. Grouped into one view so the body stays clear of
+    /// `ViewBuilder`'s ten-child limit.
+    @ViewBuilder
+    private var shelf: some View {
+        if status == .watched {
+            TasteProgressCard(films: watchlist.films)
+        }
+        if filteredFilms.isEmpty {
+            statusEmptyState
+        } else {
+            grid
+        }
+    }
+
     // MARK: - Grid
 
     private var grid: some View {
@@ -202,6 +213,44 @@ struct MyListView: View {
                     .font(.inter(11, weight: .medium))
                     .foregroundStyle(Theme.textSecondary)
             }
+
+            quickLog(film)
+        }
+    }
+
+    /// The one-tap path from "saved" to "rated", inline on the card.
+    ///
+    /// Opening a sheet to answer a single question is most of the reason
+    /// people never answer it, so the whole loop — mark it watched, say how it
+    /// was — happens here without leaving the grid.
+    @ViewBuilder
+    private func quickLog(_ film: SavedFilm) -> some View {
+        switch film.status {
+        case .watchlist:
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    watchlist.setStatus(.watched, for: film.id)
+                }
+            } label: {
+                Label("Watched it?", systemImage: "checkmark.circle")
+                    .font(.inter(11, weight: .semibold))
+                    .foregroundStyle(Theme.cream.opacity(0.75))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.07))
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+
+        case .watched where film.reaction == nil:
+            CompactReactionRow(selection: film.reaction) { reaction in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    watchlist.setReaction(reaction, for: film.id)
+                }
+            }
+
+        case .watched, .archived:
+            EmptyView()
         }
     }
 

@@ -43,3 +43,35 @@ struct ReactionPicker: View {
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }
+
+
+/// Icon-only reactions, sized for a grid card.
+///
+/// The full picker is too wide for a two-column grid, but making someone open
+/// a sheet to answer "did you like it?" is what stops them answering at all.
+struct CompactReactionRow: View {
+    let selection: FilmReaction?
+    let onSelect: (FilmReaction?) -> Void
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(FilmReaction.allCases) { reaction in
+                let isSelected = selection == reaction
+
+                Button {
+                    onSelect(isSelected ? nil : reaction)
+                } label: {
+                    Image(systemName: reaction.symbol)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(isSelected ? Theme.ink : Theme.cream.opacity(0.7))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 7)
+                        .background(isSelected ? Theme.cyan : Color.white.opacity(0.07))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(reaction.title)
+            }
+        }
+    }
+}

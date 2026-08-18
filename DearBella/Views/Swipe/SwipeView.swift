@@ -14,6 +14,15 @@ struct SwipeView: View {
 
     private let swipeThreshold: CGFloat = 110
 
+    /// Dismissing the verdict any way — the button or a swipe down — starts
+    /// the next round, so the shortlist can never be shown twice.
+    private var verdictBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.isVerdictReady },
+            set: { if !$0 { viewModel.startNewRound() } }
+        )
+    }
+
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
@@ -30,6 +39,12 @@ struct SwipeView: View {
         }
         .fullScreenCover(item: $detailMovie) { movie in
             MovieDetailView(movie: movie) { viewModel.hide($0) }
+        }
+        .fullScreenCover(isPresented: verdictBinding) {
+            SwipeVerdictView(shortlist: viewModel.sessionLikes) {
+                viewModel.startNewRound()
+            }
+            .environmentObject(watchlist)
         }
     }
 
