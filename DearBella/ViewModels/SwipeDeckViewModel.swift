@@ -22,8 +22,13 @@ final class SwipeDeckViewModel: ObservableObject {
     /// Cards swiped since the last verdict.
     private var swipesThisSession = 0
 
-    /// Enough cards to have learned something, few enough to still feel quick.
-    private let swipesPerVerdict = 12
+    /// Short on purpose. The payoff has to arrive before swiping starts to
+    /// feel like a chore, and a fast decision is the whole point.
+    private let swipesPerVerdict = 5
+
+    /// A verdict needs a real choice behind it — picking "the one film you
+    /// liked" isn't a decision, it's an echo.
+    private let likesPerVerdict = 2
 
     private let history = SwipeHistoryStore.shared
     private let hidden = HiddenFilmsStore.shared
@@ -102,12 +107,14 @@ final class SwipeDeckViewModel: ObservableObject {
         advance(past: movie)
     }
 
-    /// Offers a verdict once the round is up, provided there's something to
-    /// choose between. With no likes there is nothing to decide, so the deck
-    /// just carries on rather than interrupting for an empty result.
+    /// Offers a verdict once the round is up and there's something to choose
+    /// between. Falling short of either bar just carries on dealing cards
+    /// rather than interrupting — there's nothing to decide between one film,
+    /// and nothing at all to decide between none.
     private func countSwipe() {
         swipesThisSession += 1
-        guard swipesThisSession >= swipesPerVerdict, !sessionLikes.isEmpty else { return }
+        guard swipesThisSession >= swipesPerVerdict,
+              sessionLikes.count >= likesPerVerdict else { return }
         isVerdictReady = true
     }
 
