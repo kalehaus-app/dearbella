@@ -138,6 +138,12 @@ def block(type_, payload, group_uuid, group_type):
     }
 
 
+def question_title(text):
+    """The label above a question. Its groupType must be TITLE — TEXT is only
+    for standalone prose like the form's description."""
+    return block("TITLE", {"safeHTMLSchema": [[text]]}, new_uuid(), "TITLE")
+
+
 def heading(title, subtitle=None):
     """The form's name comes from its first block, which must be FORM_TITLE."""
     group = new_uuid()
@@ -151,12 +157,11 @@ def heading(title, subtitle=None):
 def choice_question(title, options, multiple=False, required=True):
     """A single- or multi-select question: one title block, then one block
     per option, all sharing the option group's uuid."""
-    title_group = new_uuid()
     option_group = new_uuid()
     option_type = "CHECKBOXES" if multiple else "MULTIPLE_CHOICE"
     block_type = "CHECKBOX" if multiple else "MULTIPLE_CHOICE_OPTION"
 
-    blocks = [block("TITLE", {"safeHTMLSchema": [[title]]}, title_group, "TEXT")]
+    blocks = [question_title(title)]
     for option in options:
         blocks.append(block(
             block_type,
@@ -168,7 +173,6 @@ def choice_question(title, options, multiple=False, required=True):
 
 
 def text_question(title, *, long=True, required=False, placeholder=None):
-    title_group = new_uuid()
     input_group = new_uuid()
     input_type = "TEXTAREA" if long else "INPUT_TEXT"
 
@@ -177,16 +181,15 @@ def text_question(title, *, long=True, required=False, placeholder=None):
         payload["placeholder"] = placeholder
 
     return [
-        block("TITLE", {"safeHTMLSchema": [[title]]}, title_group, "TEXT"),
+        question_title(title),
         block(input_type, payload, input_group, input_type),
     ]
 
 
 def email_question(title, required=False):
-    title_group = new_uuid()
     input_group = new_uuid()
     return [
-        block("TITLE", {"safeHTMLSchema": [[title]]}, title_group, "TEXT"),
+        question_title(title),
         block("INPUT_EMAIL", {"isRequired": required}, input_group, "INPUT_EMAIL"),
     ]
 
