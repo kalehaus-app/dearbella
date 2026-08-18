@@ -1,0 +1,38 @@
+name: Build
+
+# Runs on every push and pull request. The point is to catch compile errors
+# without needing Xcode installed locally — GitHub's macOS runners ship with it.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (iOS Simulator)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Report Xcode version
+        run: xcodebuild -version
+
+      - name: Create Secrets.xcconfig
+        # Gitignored, so it never exists on a fresh clone or in CI. It carries
+        # no keys any more — the Vercel proxy holds those — but the project's
+        # base configuration reference points at it, so it must exist.
+        run: cp Secrets.example.xcconfig Secrets.xcconfig
+
+      - name: Build
+        # A generic simulator destination avoids pinning a device name that a
+        # future runner image might not have. Signing is off because nothing
+        # here is being installed on a device.
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project DearBella.xcodeproj \
+            -scheme DearBella \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
