@@ -51,7 +51,13 @@ struct PosterImage: View {
 
         image = nil
 
-        guard let loaded = await PosterCache.shared.image(for: url) else { return }
+        let loaded = await PosterCache.shared.image(for: url)
+
+        // If the card was recycled onto a different film while this was in
+        // flight, SwiftUI has already cancelled us and started the load for the
+        // new poster. The code after an `await` still runs when a task is
+        // cancelled, so without this check the stale image would overwrite it.
+        guard !Task.isCancelled, let loaded else { return }
 
         withAnimation(.easeIn(duration: 0.25)) {
             image = loaded
