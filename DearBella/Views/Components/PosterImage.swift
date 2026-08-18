@@ -1,24 +1,60 @@
 import SwiftUI
+import UIKit
 
 /// Displays a TMDB poster, fading in once downloaded. While loading — or if
-/// there's no path, no key, or no network — it shows the placeholder gradient
-/// so a card is never empty. `seed` keeps the fallback gradient stable.
+/// there's no path, or the art genuinely doesn't exist — it shows the
+/// placeholder gradient so a card is never empty. `seed` keeps that fallback
+/// gradient stable for a given film.
+///
+/// Backed by `PosterCache` rather than `AsyncImage`. `AsyncImage` kept no
+/// usable cache and treated a cancelled load as a permanent failure, so saving
+/// a film — which re-renders the list and cancels its in-flight loads — left
+/// posters stuck on the gradient until the app was force-quit.
 struct PosterImage: View {
     let posterPath: String?
     let seed: String
+    var size: String = "w500"
+
+    @State private var image: UIImage?
+
+    private var url: URL? {
+        TMDBClient.posterURL(path: posterPath, size: size)
+    }
 
     var body: some View {
-        if let url = TMDBClient.posterURL(path: posterPath) {
-            AsyncImage(url: url, transaction: Transaction(animation: .easeIn(duration: 0.25))) { phase in
-                switch phase {
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                default:
-                    PlaceholderArt.gradient(for: seed)
-                }
+        Group {
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                PlaceholderArt.gradient(for: seed)
             }
-        } else {
-            PlaceholderArt.gradient(for: seed)
+        }
+        .task(id: url) {
+            await load()
+        }
+    }
+
+    private func load() async {
+        guard let url else {
+            image = nil
+            return
+        }
+
+        // Render straight from memory when we already have it: no placeholder
+        // flash, no animation, correct on the first frame.
+        if let cached = PosterCache.shared.cachedImage(for: url) {
+            image = cached
+            return
+        }
+
+        image = nil
+
+        guard let loaded = await PosterCache.shared.image(for: url) else { return }
+
+        withAnimation(.easeIn(duration: 0.25)) {
+            image = loaded
         }
     }
 }
