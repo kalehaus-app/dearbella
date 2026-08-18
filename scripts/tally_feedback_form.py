@@ -97,6 +97,24 @@ def new_uuid():
     return str(uuid.uuid4())
 
 
+def normalize(blocks):
+    """Stamps each block's position within its group.
+
+    Tally validates that every block declares whether it opens and closes its
+    group — a question is a title block plus one block per option sharing a
+    groupUuid, and these flags are how it knows where one question ends and the
+    next begins. Deriving them from the assembled list means the builders below
+    never have to track it by hand, and a block that is a group of its own
+    correctly gets both.
+    """
+    for index, current in enumerate(blocks):
+        previous = blocks[index - 1]["groupUuid"] if index > 0 else None
+        following = blocks[index + 1]["groupUuid"] if index < len(blocks) - 1 else None
+        current["payload"]["isFirst"] = current["groupUuid"] != previous
+        current["payload"]["isLast"] = current["groupUuid"] != following
+    return blocks
+
+
 def block(type_, payload, group_uuid, group_type):
     return {
         "uuid": new_uuid(),
@@ -245,7 +263,7 @@ def build_form():
         "when Friends launches."
     )
 
-    return {"status": "PUBLISHED", "blocks": blocks}
+    return {"status": "PUBLISHED", "blocks": normalize(blocks)}
 
 
 # --------------------------------------------------------------------------
