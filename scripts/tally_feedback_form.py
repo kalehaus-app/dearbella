@@ -30,6 +30,14 @@ import uuid
 
 API = "https://api.tally.so"
 
+# Tally sits behind Cloudflare, which rejects urllib's default
+# "Python-urllib/3.x" signature with a 403 (error code 1010) before the
+# request ever reaches the API. A normal browser User-Agent gets through.
+BROWSER_UA = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+
 
 # --------------------------------------------------------------------------
 # HTTP
@@ -49,6 +57,8 @@ def call(method, path, body=None):
         headers={
             "Authorization": f"Bearer {key}",
             "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": BROWSER_UA,
         },
     )
 
@@ -60,8 +70,17 @@ def call(method, path, body=None):
         detail = error.read().decode()
         print(f"\nHTTP {error.code} from {method} {path}", file=sys.stderr)
         print(detail or "(no body)", file=sys.stderr)
-        print("\nPaste the above back into the chat and the payload can be "
-              "corrected to match.", file=sys.stderr)
+
+        if "1010" in detail or "cloudflare" in detail.lower():
+            print("\nThat is Cloudflare blocking the request, not Tally "
+                  "rejecting the key. Try the curl fallback in the README "
+                  "section of this file.", file=sys.stderr)
+        elif error.code in (401, 403):
+            print("\nCheck TALLY_API_KEY is set and still valid "
+                  "(tally.so -> Settings -> API).", file=sys.stderr)
+        else:
+            print("\nPaste the above back into the chat and the payload can "
+                  "be corrected to match.", file=sys.stderr)
         sys.exit(1)
 
 
