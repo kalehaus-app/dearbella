@@ -67,11 +67,35 @@ struct FindSomethingView: View {
 
                 findButton
                     .padding(.top, 4)
+
+                // Below the button on purpose: browsing is the alternative to
+                // asking, not a step before it.
+                if search.films.isEmpty && search.people.isEmpty && !search.browse.isEmpty {
+                    wall
+                }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 40)
         }
         .scrollDismissesKeyboard(.interactively)
+        .task { await search.loadBrowse(saved: watchlist.films) }
+    }
+
+    /// Art on the screen from the moment it opens, and a way in that needs no
+    /// typing at all.
+    private var wall: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("OR START FROM A FILM")
+                .font(.inter(11, weight: .semibold))
+                .foregroundStyle(Theme.textSecondary)
+                .tracking(0.8)
+                .padding(.top, 12)
+
+            PosterWall(films: search.browse) { film in
+                tasteStore.profile.favouriteFilm = film.title
+                clearSearch()
+            }
+        }
     }
 
     private var searchField: some View {
