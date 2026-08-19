@@ -1,5 +1,36 @@
 import Foundation
 
+/// What a Match deck was built from.
+///
+/// Two ways in, deliberately different in kind. A vibe is the thing only Bella
+/// can answer, and it costs a Claude call. A genre is the familiar anchor —
+/// TMDB can serve it instantly and for free, and someone who just wants horror
+/// shouldn't wait on a model to agree that horror exists.
+enum MatchSource: Identifiable, Hashable {
+    case vibe(MatchVibe)
+    case genre(id: Int, name: String)
+
+    var id: String {
+        switch self {
+        case .vibe(let vibe):     return "vibe-\(vibe.id)"
+        case .genre(let id, _):   return "genre-\(id)"
+        }
+    }
+
+    /// What the deck header shows.
+    var title: String {
+        switch self {
+        case .vibe(let vibe):     return vibe.title
+        case .genre(_, let name): return name
+        }
+    }
+
+    var vibe: MatchVibe? {
+        if case .vibe(let vibe) = self { return vibe }
+        return nil
+    }
+}
+
 /// A way in to the Match deck: not a genre, but the kind of evening someone
 /// wants to have.
 ///

@@ -13,8 +13,12 @@ import Foundation
 /// store); this model stays focused on the deck, the round, and history.
 @MainActor
 final class MatchDeckViewModel: ObservableObject {
-    /// The chosen vibe. Nil means the picker is still showing.
-    @Published private(set) var vibe: MatchVibe?
+    /// What the deck was built from. Nil means the picker is still showing.
+    @Published private(set) var source: MatchSource?
+
+    /// The vibe behind the deck, when there is one — the match screen credits
+    /// it, and a genre deck has none.
+    var vibe: MatchVibe? { source?.vibe }
 
     @Published private(set) var deck: [SwipeMovie] = []
     @Published private(set) var isLoading = false
@@ -46,9 +50,9 @@ final class MatchDeckViewModel: ObservableObject {
     /// Taste profile for the deck request, handed in by the view.
     private var context = TasteContext(films: [])
 
-    /// Set once the vibe's curated deck is spent, after which refills come
+    /// Set once the source's own supply is spent, after which refills come
     /// from popular films rather than stopping.
-    private var vibeExhausted = false
+    private var sourceExhausted = false
     private var page = 0
     private var isFetching = false
     private var runtimeCache: [Int: Int] = [:]
@@ -56,33 +60,82 @@ final class MatchDeckViewModel: ObservableObject {
     /// The card currently on top.
     var topMovie: SwipeMovie? { deck.first }
 
-    /// Chooses a vibe and deals its deck.
-    func choose(_ vibe: MatchVibe, context: TasteContext) async {
-        self.vibe = vibe
+    /// Chooses a vibe or a genre and deals its deck.
+    func choose(_ source: MatchSource, context: TasteContext) async {
+        self.source = source
         self.context = context
         deck = []
         error = nil
         exhausted = false
-        vibeExhausted = false
+        sourceExhausted = false
         page = 0
         startNewRound()
-        await loadVibeDeck()
+        await loadDeck()
     }
 
     /// Back to the picker, so a different mood is one tap away.
-    func changeVibe() {
-        vibe = nil
+    func changeSource() {
+        source = nil
         deck = []
         error = nil
         exhausted = false
         startNewRound()
+    }
+
+    private func loadDeck() async {
+        switch source {
+        case .vibe(let vibe):           await loadVibeDeck(vibe)
+        case .genre(let id, _):         await loadGenreDeck(id)
+        case nil:                       break
+        }
+    }
+
+    /// Genres come straight from TMDB: instant, free, and popularity is a fair
+    /// answer to "show me horror" in a way it never is to "wreck me".
+    private func loadGenreDeck(_ genreID: Int) async {
+        guard !isFetching else { return }
+        isFetching = true
+        isLoading = deck.isEmpty
+        defer { isFetching = false; isLoading = false }
+
+        var attempts = 0
+        while attempts < 3 {
+            attempts += 1
+            page += 1
+            let movies = await tmdb.discoverMovies(genreID: genreID, page: page)
+
+            if movies.isEmpty {
+                if deck.isEmpty && attempts == 1 {
+                    error = "Couldn't load films right now. Check your connection and try again."
+                } else {
+                    sourceExhausted = true
+                }
+                return
+            }
+
+            let fresh = movies
+                .compactMap(SwipeMovie.init(from:))
+                .filter { movie in
+                    movie.posterPath?.isEmpty == false
+                        && !history.hasSeen(movie.id)
+                        && !hidden.isHidden(id: movie.id)
+                        && !deck.contains { $0.id == movie.id }
+                }
+
+            if !fresh.isEmpty {
+                deck.append(contentsOf: fresh)
+                error = nil
+                return
+            }
+        }
+        sourceExhausted = true
     }
 
     /// Asks Bella for films fitting the vibe. On failure the deck falls back to
     /// popular films rather than leaving an empty screen — a worse deck beats
     /// no deck when someone is standing there wanting to watch something.
-    private func loadVibeDeck() async {
-        guard let vibe, !isFetching else { return }
+    private func loadVibeDeck(_ vibe: MatchVibe) async {
+        guard !isFetching else { return }
         isFetching = true
         isLoading = true
         defer { isFetching = false; isLoading = false }
@@ -96,13 +149,13 @@ final class MatchDeckViewModel: ObservableObject {
             let fresh = films.filter { !history.hasSeen($0.id) && !hidden.isHidden(id: $0.id) }
 
             if fresh.isEmpty {
-                vibeExhausted = true
+                sourceExhausted = true
                 await fetchMore()
             } else {
                 deck = fresh
             }
         } catch {
-            vibeExhausted = true
+            sourceExhausted = true
             await fetchMore()
         }
     }
@@ -201,10 +254,10 @@ final class MatchDeckViewModel: ObservableObject {
         deck.removeAll { $0.id == movie.id }
         guard deck.count <= 3 else { return }
         Task {
-            // Ask Bella for more of the same vibe while she still has some;
-            // only fall back to popular films once she's out.
-            if vibe != nil && !vibeExhausted {
-                await loadVibeDeck()
+            // Top up from the same source while it still has films; only fall
+            // back to popular ones once it's spent.
+            if source != nil && !sourceExhausted {
+                await loadDeck()
             } else {
                 await fetchMore()
             }

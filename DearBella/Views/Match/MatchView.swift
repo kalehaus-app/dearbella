@@ -70,10 +70,10 @@ struct MatchView: View {
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.vibe == nil {
+        if viewModel.source == nil {
             MatchVibePicker(
-                onSelect: { vibe in
-                    Task { await viewModel.choose(vibe, context: tasteContext) }
+                onSelect: { source in
+                    Task { await viewModel.choose(source, context: tasteContext) }
                 },
                 onBracket: { showBracket = true }
             )
@@ -104,7 +104,7 @@ struct MatchView: View {
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream)
                     .multilineTextAlignment(.center)
-                Button("Try another vibe") { viewModel.changeVibe() }
+                Button("Try something else") { viewModel.changeSource() }
                     .font(.dearBellaButton)
                     .foregroundStyle(Theme.cyan)
             }
@@ -149,7 +149,7 @@ struct MatchView: View {
     private var deckHeader: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(viewModel.vibe?.title ?? "Match")
+                Text(viewModel.source?.title ?? "Match")
                     .font(.dmSerif(28))
                     .foregroundStyle(Theme.cream)
                     .lineLimit(1)
@@ -159,7 +159,7 @@ struct MatchView: View {
                     .foregroundStyle(Theme.cream.opacity(0.5))
             }
             Spacer()
-            Button { viewModel.changeVibe() } label: {
+            Button { viewModel.changeSource() } label: {
                 Text("Change")
                     .font(.inter(13, weight: .semibold))
                     .foregroundStyle(Theme.cyan)
