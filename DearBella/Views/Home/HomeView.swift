@@ -2,9 +2,9 @@ import SwiftUI
 
 /// The home feed, and the app's front door.
 ///
-/// It leads with "tell me what you love and I'll find your next one", because
-/// that is what the app is for — a screen of poster rows looks like a catalogue
-/// and doesn't do anything. Browsing sits underneath it.
+/// It opens on the ask itself rather than a panel advertising it. A hero card
+/// is a poster for the feature; the field is the feature, and putting it here
+/// costs a tap less and no explaining. Browsing sits underneath.
 struct HomeView: View {
     @EnvironmentObject private var store: OnboardingStore
     @EnvironmentObject private var watchlist: WatchlistStore
@@ -187,34 +187,83 @@ struct HomeView: View {
     /// profile, because coming back to a form you've already filled in should
     /// feel like picking up, not starting over.
     private var findSomethingPanel: some View {
-        Button { showFindSomething = true } label: {
-            VStack(alignment: .leading, spacing: 14) {
-                Text(tasteStore.profile.isUsable
-                     ? "Ready when you are."
-                     : "Tell me what you love and I'll find your next one.")
-                    .font(.dmSerif(28, relativeTo: .title))
-                    .foregroundStyle(Theme.ink)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 12) {
+            askField
 
-                HStack(spacing: 8) {
-                    Text(tasteStore.profile.isUsable ? "Find me something" : "Start")
-                        .font(.dearBellaButton)
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 13, weight: .bold))
-                }
-                .foregroundStyle(Theme.cream)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 11)
-                .background(Theme.ink)
-                .clipShape(Capsule())
+            if !quickPicks.isEmpty {
+                quickPickRow
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-            .background(Theme.cyan)
-            .clipShape(RoundedRectangle(cornerRadius: 18))
+        }
+    }
+
+    /// Looks like a field and behaves like one — tapping opens the real thing
+    /// with the keyboard already up. A live text field here would mean two
+    /// places holding the same answer.
+    private var askField: some View {
+        Button { showFindSomething = true } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Theme.cyan)
+
+                Text(tasteStore.profile.isUsable
+                     ? tasteStore.profile.summary
+                     : "Name a film, director, or a feeling…")
+                    .font(.inter(15))
+                    .foregroundStyle(tasteStore.profile.isUsable
+                                     ? Theme.cream
+                                     : Theme.cream.opacity(0.42))
+                    .lineLimit(1)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 15)
+            .padding(.vertical, 14)
+            .background(Color.white.opacity(0.07))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Theme.cream.opacity(0.16), lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
+    }
+
+    /// Their own films, one tap from an answer. A chip fills the film in and
+    /// opens straight to it, so the common case never involves typing.
+    private var quickPickRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(quickPicks, id: \.self) { title in
+                    Button {
+                        tasteStore.profile.favouriteFilm = title
+                        showFindSomething = true
+                    } label: {
+                        Text(title)
+                            .font(.inter(12, weight: .semibold))
+                            .foregroundStyle(Theme.cream.opacity(0.85))
+                            .lineLimit(1)
+                            .padding(.horizontal, 13)
+                            .padding(.vertical, 7)
+                            .background(Color.white.opacity(0.06))
+                            .clipShape(Capsule())
+                            .overlay(
+                                Capsule().stroke(Theme.cream.opacity(0.16), lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var quickPicks: [String] {
+        Array(
+            TasteSuggestions.films(
+                onboarding: store.selectedFilms.map(\.title),
+                saved: watchlist.films.map(\.title)
+            ).prefix(6)
+        )
     }
 
     // MARK: - Bella's Pick Today

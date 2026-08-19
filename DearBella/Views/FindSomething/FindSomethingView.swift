@@ -34,6 +34,15 @@ struct FindSomethingView: View {
 
             closeButton
         }
+        .onAppear(perform: focusIfBlank)
+    }
+
+    /// Home now looks like a search field, so tapping it should behave like
+    /// one. Only when there's nothing filled in — arriving with an answer
+    /// already there means they're more likely to be after the button.
+    private func focusIfBlank() {
+        guard viewModel.pick == nil, tasteStore.profile.isEmpty else { return }
+        focusedField = .film
     }
 
     // MARK: - Questions

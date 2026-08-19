@@ -27,6 +27,16 @@ struct TasteProfile: Codable, Equatable {
     var isEmpty: Bool {
         director.isEmpty && favouriteFilm.isEmpty && why.isEmpty
     }
+
+    /// What Home shows in the field once there's something saved — their own
+    /// words back, so the field reads as a standing request rather than an
+    /// empty box they've already filled in once.
+    var summary: String {
+        [favouriteFilm, director, why]
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
+    }
 }
 
 @MainActor
