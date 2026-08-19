@@ -1,17 +1,16 @@
 import SwiftUI
 
-/// The Swipe tab: a deck of films to fill your list from.
+/// The Discover tab: a deck of films to fill your list from.
 ///
 /// It opens already dealing — no picker in front of it, because a screen
 /// asking what you want before showing you anything is a wall in front of the
 /// only thing the tab does. The filter row switches pools mid-flow instead.
 ///
 /// Drag right to like (saves to the watchlist), left to pass; the buttons do
-/// the same. This tab collects; deciding happens in Match, from what's saved.
-struct SwipeView: View {
+/// the same. This tab collects; deciding happens in My List, from what's saved.
+struct DiscoverView: View {
     @StateObject private var viewModel = SwipeFeedViewModel()
     @EnvironmentObject private var watchlist: WatchlistStore
-    @EnvironmentObject private var store: OnboardingStore
 
     @State private var drag: CGSize = .zero
     @State private var showReward = false
@@ -21,24 +20,13 @@ struct SwipeView: View {
     private let swipeThreshold: CGFloat = 110
 
 
-    /// What Bella knows about them, so the deck is picked to the vibe *and* to
-    /// their taste rather than the vibe alone.
-    private var tasteContext: TasteContext {
-        TasteContext(
-            films: watchlist.films,
-            onboardingGenres: SampleData.genres
-                .filter { store.selectedGenreIDs.contains($0.id) }
-                .map(\.name),
-            onboardingFilms: store.selectedFilms.map(\.title)
-        )
-    }
 
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
             content
         }
-        .task { await viewModel.loadInitial(context: tasteContext) }
+        .task { await viewModel.loadInitial() }
         .sensoryFeedback(.success, trigger: likeCount)
         .overlay(alignment: .top) {
             if showReward {
@@ -57,7 +45,7 @@ struct SwipeView: View {
         if viewModel.isLoading {
             message {
                 ProgressView().tint(Theme.cyan)
-                Text(viewModel.filter.vibe == nil ? "Loading films…" : "Bella's picking films for you…")
+                Text("Loading films…")
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream.opacity(0.7))
             }
@@ -125,7 +113,7 @@ struct SwipeView: View {
     /// separate screen, so switching moods never costs the deck you're in.
     private var deckHeader: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Swipe")
+            Text("Discover")
                 .font(.dearBellaTitle)
                 .foregroundStyle(Theme.cream)
                 .padding(.horizontal, 20)
@@ -142,7 +130,7 @@ struct SwipeView: View {
                     let isSelected = viewModel.filter == option
 
                     Button {
-                        Task { await viewModel.apply(option, context: tasteContext) }
+                        Task { await viewModel.apply(option) }
                     } label: {
                         Text(option.title)
                             .font(.inter(13, weight: .semibold))
@@ -234,7 +222,6 @@ struct SwipeView: View {
 }
 
 #Preview {
-    SwipeView()
+    DiscoverView()
         .environmentObject(WatchlistStore())
-        .environmentObject(OnboardingStore())
 }

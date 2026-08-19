@@ -60,6 +60,7 @@ struct HomeView: View {
             AboutView()
                 .environmentObject(HiddenFilmsStore.shared)
                 .environmentObject(notifications)
+                .environmentObject(watchlist)
         }
         .alert("Coming soon", isPresented: $showComingSoon) {
             Button("OK", role: .cancel) {}

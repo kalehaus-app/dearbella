@@ -7,6 +7,8 @@ struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var hidden: HiddenFilmsStore
     @EnvironmentObject private var notifications: NotificationService
+    @EnvironmentObject private var watchlist: WatchlistStore
+    @State private var showClearConfirm = false
 
     private let privacyURL = URL(string: "https://dearbella-site.vercel.app")!
 
@@ -31,6 +33,8 @@ struct AboutView: View {
                     remindersSection
                     Divider().background(Theme.cream.opacity(0.12))
                     hiddenFilmsSection
+                    Divider().background(Theme.cream.opacity(0.12))
+                    clearListSection
                     Divider().background(Theme.cream.opacity(0.12))
                     tmdbAttribution
                     Divider().background(Theme.cream.opacity(0.12))
@@ -148,6 +152,39 @@ struct AboutView: View {
         }
     }
 
+    /// A way to start over. Hidden when the list is already empty, so it isn't
+    /// a permanently armed destructive button on a settings screen.
+    @ViewBuilder
+    private var clearListSection: some View {
+        if !watchlist.films.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Button(role: .destructive) {
+                    showClearConfirm = true
+                } label: {
+                    Label("Clear my list", systemImage: "trash")
+                        .font(.dearBellaBody)
+                        .foregroundStyle(Theme.accent)
+                }
+                .buttonStyle(.plain)
+
+                Text("Removes all \(watchlist.films.count) films, along with your ratings and notes.")
+                    .font(.dearBellaCaption)
+                    .foregroundStyle(Theme.cream.opacity(0.5))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .confirmationDialog(
+                "Clear your whole list?",
+                isPresented: $showClearConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Clear everything", role: .destructive) { watchlist.removeAll() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("All \(watchlist.films.count) films go, and so do the ratings and notes on them. This can't be undone.")
+            }
+        }
+    }
+
     /// Required TMDB attribution: logo + the exact attribution sentence.
     private var tmdbAttribution: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -214,4 +251,5 @@ struct AboutView: View {
     AboutView()
         .environmentObject(HiddenFilmsStore.shared)
         .environmentObject(NotificationService.shared)
+        .environmentObject(WatchlistStore())
 }

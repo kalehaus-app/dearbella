@@ -26,11 +26,6 @@ final class SwipeFeedViewModel: ObservableObject {
     private let history = SwipeHistoryStore.shared
     private let hidden = HiddenFilmsStore.shared
     private let tmdb = TMDBClient.shared
-    private let engine = RecommendationEngine.shared
-
-    /// Taste profile for the deck request, handed in by the view.
-    private var context = TasteContext(films: [])
-
     /// Set once the source's own supply is spent, after which refills come
     /// from popular films rather than stopping.
     private var sourceExhausted = false
@@ -42,18 +37,16 @@ final class SwipeFeedViewModel: ObservableObject {
     var topMovie: SwipeMovie? { deck.first }
 
     /// Opens the deck on whatever filter is current. Safe to call repeatedly.
-    func loadInitial(context: TasteContext) async {
+    func loadInitial() async {
         guard deck.isEmpty, !isFetching else { return }
-        self.context = context
         await loadDeck()
     }
 
     /// Switches pools mid-flow. The deck is replaced rather than appended to,
     /// since the point of changing filter is to stop seeing the old pool.
-    func apply(_ filter: SwipeFilter, context: TasteContext) async {
+    func apply(_ filter: SwipeFilter) async {
         guard filter != self.filter else { return }
         self.filter = filter
-        self.context = context
         deck = []
         error = nil
         exhausted = false
@@ -67,7 +60,6 @@ final class SwipeFeedViewModel: ObservableObject {
         case .everything:       await fetchMore()
         case .newReleases:      await loadNewReleases()
         case .genre(let id, _): await loadGenreDeck(id)
-        case .mood(let vibe):   await loadVibeDeck(vibe)
         }
     }
 
@@ -84,7 +76,7 @@ final class SwipeFeedViewModel: ObservableObject {
         if fresh.isEmpty {
             // Nothing new left unswiped — widen rather than dead-end.
             sourceExhausted = true
-            await fetchMore()
+            await fetchPopular()
         } else {
             deck.append(contentsOf: fresh)
             error = nil
@@ -136,34 +128,6 @@ final class SwipeFeedViewModel: ObservableObject {
         sourceExhausted = true
     }
 
-    /// Asks Bella for films fitting the vibe. On failure the deck falls back to
-    /// popular films rather than leaving an empty screen — a worse deck beats
-    /// no deck when someone is standing there wanting to watch something.
-    private func loadVibeDeck(_ vibe: MatchVibe) async {
-        guard !isFetching else { return }
-        isFetching = true
-        isLoading = true
-        defer { isFetching = false; isLoading = false }
-
-        do {
-            let films = try await engine.matchDeck(
-                vibe: vibe,
-                context: context,
-                exclude: deck.map(\.title)
-            )
-            let fresh = films.filter { !history.hasSeen($0.id) && !hidden.isHidden(id: $0.id) }
-
-            if fresh.isEmpty {
-                sourceExhausted = true
-                await fetchMore()
-            } else {
-                deck = fresh
-            }
-        } catch {
-            sourceExhausted = true
-            await fetchMore()
-        }
-    }
 
     /// Top-up from TMDB's popular list, used once the vibe's curated deck is
     /// spent. Runs through successive pages until it adds unseen films, hits a
@@ -173,6 +137,16 @@ final class SwipeFeedViewModel: ObservableObject {
         isFetching = true
         isLoading = deck.isEmpty
         defer { isFetching = false; isLoading = false }
+        await fetchPopular()
+    }
+
+    /// The body of `fetchMore`, without the in-flight guard.
+    ///
+    /// The narrower loaders fall back to popular films when their own pool
+    /// comes up empty, and they call this while already holding `isFetching` —
+    /// going through `fetchMore` would trip its guard, silently skip the
+    /// fallback, and leave an empty deck claiming there was nothing left.
+    private func fetchPopular() async {
 
         var attempts = 0
         while attempts < 5 {

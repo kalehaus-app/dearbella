@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Wraps the main app in a bottom tab bar: Home to see what's on, Swipe to
+/// Wraps the main app in a bottom tab bar: Home to see what's on, Discover to
 /// fill your list, My List to decide from it. Home is first, so after
 /// onboarding the app still lands on the dashboard exactly as before.
 ///
@@ -19,9 +19,9 @@ struct MainTabView: View {
                 }
                 .tag(0)
 
-            SwipeView()
+            DiscoverView()
                 .tabItem {
-                    Label("Swipe", systemImage: "rectangle.stack")
+                    Label("Discover", systemImage: "rectangle.stack")
                 }
                 .tag(1)
 

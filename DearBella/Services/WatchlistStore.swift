@@ -65,6 +65,12 @@ final class WatchlistStore: ObservableObject {
         films.removeAll { $0.id == film.id }
     }
 
+    /// Empties the list. Ratings and notes go with it, which is why the only
+    /// caller confirms first.
+    func removeAll() {
+        films = []
+    }
+
     /// Adds a film if it isn't already saved (used by swipe-right). Unlike
     /// `toggle`, this never removes an already-saved film.
     func save(_ film: SavedFilm) {

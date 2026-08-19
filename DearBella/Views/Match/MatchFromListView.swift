@@ -7,8 +7,13 @@ import SwiftUI
 /// "which of the things I already want?" — which is the question people
 /// actually have at 8pm on a Friday, and the one nothing else answers.
 ///
-/// It's also what makes collecting worth doing: every swipe in the Swipe tab
-/// is feeding this.
+/// It's also what makes collecting worth doing: every swipe in Discover is
+/// feeding this.
+///
+/// The rule is as small as it can be: five films at a time, and the first one
+/// you swipe right on is the match. Narrowing rounds asked people to hold a
+/// tournament in their head — but nobody deliberating over dinner wants a
+/// bracket, they want to be asked until something sounds good.
 struct MatchFromListView: View {
     let films: [SavedFilm]
 
@@ -16,11 +21,14 @@ struct MatchFromListView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var remaining: [SavedFilm] = []
-    @State private var keepers: [SavedFilm] = []
+    @State private var rejected: Set<String> = []
     @State private var drag: CGSize = .zero
     @State private var matched: SavedFilm?
 
     private let swipeThreshold: CGFloat = 110
+
+    /// Few enough to get through in seconds. A round is a nudge, not an audit.
+    private let roundSize = 5
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -68,11 +76,11 @@ struct MatchFromListView: View {
 
     private var header: some View {
         VStack(spacing: 4) {
-            Text("Which of these, tonight?")
+            Text("Fancy this tonight?")
                 .font(.dmSerif(24))
                 .foregroundStyle(Theme.cream)
                 .multilineTextAlignment(.center)
-            Text("\(remaining.count) left · keep the ones you'd actually watch")
+            Text("First one you like is your match")
                 .font(.dearBellaCaption)
                 .foregroundStyle(Theme.cream.opacity(0.5))
         }
@@ -144,11 +152,22 @@ struct MatchFromListView: View {
 
     // MARK: - Rounds
 
-    /// Only unwatched films, shuffled so the same one doesn't lead every time.
+    /// Deals a fresh round, preferring films this sitting hasn't rejected yet.
+    /// Once they've all been turned down, the pool reopens rather than
+    /// dead-ending — running out of list is not an answer to "what's on
+    /// tonight".
     private func start() {
         guard remaining.isEmpty, matched == nil else { return }
-        remaining = films.shuffled()
-        keepers = []
+        deal()
+    }
+
+    private func deal() {
+        var pool = films.filter { !rejected.contains($0.id) }
+        if pool.isEmpty {
+            rejected = []
+            pool = films
+        }
+        remaining = Array(pool.shuffled().prefix(roundSize))
     }
 
     private func gesture(for film: SavedFilm) -> some Gesture {
@@ -169,28 +188,16 @@ struct MatchFromListView: View {
         withAnimation(.easeOut(duration: 0.28)) {
             drag = CGSize(width: keep ? 1000 : -1000, height: drag.height)
         } completion: {
-            if keep { keepers.append(film) }
-            remaining.removeAll { $0.id == film.id }
             drag = .zero
-            advance()
-        }
-    }
 
-    /// Rounds narrow until one film is left standing.
-    ///
-    /// Keeping nothing would leave nothing to decide between, so a round that
-    /// rejects everything replays the same films rather than dead-ending —
-    /// being that decisive usually means not looking properly the first time.
-    private func advance() {
-        guard remaining.isEmpty else { return }
+            if keep {
+                matched = film
+                return
+            }
 
-        if keepers.count == 1 {
-            matched = keepers.first
-        } else if keepers.count > 1 {
-            remaining = keepers.shuffled()
-            keepers = []
-        } else {
-            remaining = films.shuffled()
+            rejected.insert(film.id)
+            remaining.removeAll { $0.id == film.id }
+            if remaining.isEmpty { deal() }
         }
     }
 }
