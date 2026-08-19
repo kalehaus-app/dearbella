@@ -18,14 +18,14 @@ struct BracketWinnerView: View {
                     .foregroundStyle(streakYellow)
                     .padding(.top, 16)
 
-                Color.clear
-                    .aspectRatio(0.66, contentMode: .fit)
-                    .overlay { PosterImage(posterPath: winner.posterPath, seed: winner.title) }
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                    .frame(maxWidth: 260)
+                // Kept small enough that Save and Start Over stay on screen.
+                // This is a result to act on, not a poster to admire.
+                PosterImage(posterPath: winner.posterPath, seed: winner.title)
+                    .frame(width: 170, height: 255)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
 
                 Text(winner.year != nil ? "\(winner.title) (\(winner.year!))" : winner.title)
-                    .font(.dmSerif(30))
+                    .font(.dmSerif(26))
                     .foregroundStyle(Theme.cream)
                     .multilineTextAlignment(.center)
 

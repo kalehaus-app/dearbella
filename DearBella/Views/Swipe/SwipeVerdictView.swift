@@ -19,7 +19,7 @@ struct SwipeVerdictView: View {
     @State private var showNotificationPrimer = false
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topLeading) {
             Theme.background.ignoresSafeArea()
 
             if let pick {
@@ -27,12 +27,34 @@ struct SwipeVerdictView: View {
             } else {
                 thinking
             }
+
+            closeButton
         }
         .task { await decide() }
         .fullScreenCover(isPresented: $showNotificationPrimer) {
             NotificationPrimer { showNotificationPrimer = false }
                 .presentationBackground(.clear)
         }
+    }
+
+    /// A visible way out. "Keep swiping" is the same exit phrased as an
+    /// action, but a full-screen view with no close control reads as a trap
+    /// however good the content is.
+    private var closeButton: some View {
+        Button {
+            onKeepSwiping()
+            dismiss()
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.cream.opacity(0.75))
+                .frame(width: 36, height: 36)
+                .background(Color.white.opacity(0.08), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .padding(.leading, 16)
+        .padding(.top, 8)
+        .accessibilityLabel("Close")
     }
 
     // MARK: - States
@@ -48,7 +70,7 @@ struct SwipeVerdictView: View {
 
     private func result(_ movie: SwipeMovie) -> some View {
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(spacing: 14) {
                 Text("Watch this tonight")
                     .font(.inter(12, weight: .bold))
                     .foregroundStyle(Theme.ink)
@@ -56,51 +78,55 @@ struct SwipeVerdictView: View {
                     .padding(.vertical, 6)
                     .background(Theme.cyan)
                     .clipShape(Capsule())
-                    .padding(.top, 24)
+                    .padding(.top, 52)
 
+                // Small enough that the title, the reason and both buttons
+                // share one screen. This is a decision to act on, not a poster
+                // to admire — burying the buttons below the fold undoes the
+                // point of ending the session here.
                 PosterImage(posterPath: movie.posterPath, seed: movie.title)
-                    .frame(maxWidth: 240)
-                    .aspectRatio(0.66, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .frame(width: 150, height: 225)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Text(movie.title)
-                    .font(.dmSerif(30))
+                    .font(.dmSerif(26))
                     .foregroundStyle(Theme.cream)
                     .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
 
                 if isThinking {
-                    ProgressView().tint(Theme.cyan).padding(.top, 2)
+                    ProgressView().tint(Theme.cyan)
                 } else if let blurb {
                     Text(blurb)
-                        .font(.inter(15))
-                        .foregroundStyle(Theme.cream.opacity(0.85))
+                        .font(.inter(14))
+                        .foregroundStyle(Theme.cream.opacity(0.8))
                         .multilineTextAlignment(.center)
-                        .lineSpacing(3)
-                        .padding(.horizontal, 32)
+                        .lineSpacing(2)
+                        .lineLimit(4)
+                        .padding(.horizontal, 24)
                 }
 
                 actions(movie)
-                    .padding(.top, 4)
 
                 Text("Picked from the \(shortlist.count) film\(shortlist.count == 1 ? "" : "s") you liked just now.")
                     .font(.dearBellaCaption)
                     .foregroundStyle(Theme.cream.opacity(0.45))
-                    .padding(.top, 4)
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 32)
+            .padding(.bottom, 24)
             .frame(maxWidth: .infinity)
         }
     }
 
     private func actions(_ movie: SwipeMovie) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             Link(destination: WatchlistStore.watchURL(for: movie.savedFilm)) {
                 Label("Where to watch", systemImage: "play.rectangle.fill")
                     .font(.dearBellaButton)
                     .foregroundStyle(Theme.ink)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 13)
                     .background(Theme.cyan)
                     .clipShape(Capsule())
             }
@@ -113,7 +139,7 @@ struct SwipeVerdictView: View {
                     .font(.inter(15, weight: .medium))
                     .foregroundStyle(Theme.cream.opacity(0.75))
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, 11)
                     .background(Color.white.opacity(0.06))
                     .clipShape(Capsule())
             }
