@@ -2,12 +2,14 @@ import SwiftUI
 
 /// "Tell me what you love and I'll find your next one."
 ///
-/// The front door of the app. Three questions — a film, optionally a director
-/// or actor, and crucially *why* — then one recommendation whose reason
-/// answers what they said rather than summarising a plot.
+/// One box, not a form. Three labelled fields with `optional` tags read as a
+/// signup flow, and asking someone to fill in a form before they can ask a
+/// question is the opposite of the point.
 ///
-/// Answers persist, so a returning user sees them filled in and is one tap
-/// from a new pick.
+/// So the box takes anything — a film, a director, or a sentence about the
+/// evening you want — and works out which it was: matches become chips you can
+/// see and remove, and anything you don't pick from is kept as your own words.
+/// Refining is adding another chip rather than opening another field.
 struct FindSomethingView: View {
     let context: TasteContext
 
@@ -18,9 +20,9 @@ struct FindSomethingView: View {
 
     @StateObject private var viewModel = FindSomethingViewModel()
     @StateObject private var search = TasteSearchViewModel()
-    @FocusState private var focusedField: Field?
 
-    private enum Field { case film, director, why }
+    @State private var query = ""
+    @FocusState private var isTyping: Bool
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -29,89 +31,33 @@ struct FindSomethingView: View {
             if let pick = viewModel.pick {
                 result(pick)
             } else {
-                questions
+                ask
             }
 
             closeButton
         }
-        .onAppear(perform: focusIfBlank)
+        .onAppear { if tasteStore.profile.isEmpty { isTyping = true } }
     }
 
-    /// Home now looks like a search field, so tapping it should behave like
-    /// one. Only when there's nothing filled in — arriving with an answer
-    /// already there means they're more likely to be after the button.
-    private func focusIfBlank() {
-        guard viewModel.pick == nil, tasteStore.profile.isEmpty else { return }
-        focusedField = .film
-    }
+    // MARK: - Ask
 
-    // MARK: - Questions
-
-    private var questions: some View {
+    private var ask: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Tell me what you love")
-                        .font(.dmSerif(30))
-                        .foregroundStyle(Theme.cream)
-                    Text("Any one of these is enough. Fill in more and I'll get sharper.")
-                        .font(.dearBellaBody)
-                        .foregroundStyle(Theme.cream.opacity(0.6))
+            VStack(alignment: .leading, spacing: 18) {
+                Text("What are you in the mood for?")
+                    .font(.dmSerif(30))
+                    .foregroundStyle(Theme.cream)
+                    .padding(.top, 56)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                searchField
+
+                if !search.films.isEmpty || !search.people.isEmpty {
+                    results
+                } else {
+                    chosen
+                    reasonChips
                 }
-                .padding(.top, 56)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    field(
-                        label: "A film you love",
-                        placeholder: "Search any film…",
-                        optional: true,
-                        text: $tasteStore.profile.favouriteFilm,
-                        focus: .film,
-                        suggestions: search.films.isEmpty ? filmSuggestions : []
-                    )
-                    .onChange(of: tasteStore.profile.favouriteFilm) { _, query in
-                        search.searchFilms(query)
-                    }
-
-                    FilmResultRow(films: search.films) { film in
-                        tasteStore.profile.favouriteFilm = film.title ?? ""
-                        search.clearFilms()
-                        focusedField = nil
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    field(
-                        label: "A director or actor you love",
-                        placeholder: "Search any name…",
-                        optional: true,
-                        text: $tasteStore.profile.director,
-                        focus: .director,
-                        suggestions: search.people.isEmpty ? TasteSuggestions.names : []
-                    )
-                    .onChange(of: tasteStore.profile.director) { _, query in
-                        search.searchPeople(query)
-                    }
-
-                    PersonResultRow(people: search.people) { person in
-                        tasteStore.profile.director = person.name
-                        search.clearPeople()
-                        focusedField = nil
-                    }
-                }
-
-                field(
-                    label: "What are you after?",
-                    placeholder: "The storyline, and all the old Hollywood",
-                    optional: true,
-                    multiline: true,
-                    text: $tasteStore.profile.why,
-                    focus: .why,
-                    suggestions: TasteSuggestions.reasons,
-                    // Several things can be true at once about why a film
-                    // lands, so these add up rather than replace each other.
-                    appendsSuggestions: true
-                )
 
                 if let error = viewModel.error {
                     Text(error)
@@ -120,6 +66,7 @@ struct FindSomethingView: View {
                 }
 
                 findButton
+                    .padding(.top, 4)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 40)
@@ -127,98 +74,103 @@ struct FindSomethingView: View {
         .scrollDismissesKeyboard(.interactively)
     }
 
-    /// Films we already know they like, so the row is their taste rather than
-    /// a list of famous titles.
-    private var filmSuggestions: [String] {
-        TasteSuggestions.films(
-            onboarding: onboarding.selectedFilms.map(\.title),
-            saved: watchlist.films.map(\.title)
-        )
-    }
+    private var searchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(Theme.cream.opacity(0.5))
 
-    private func field(
-        label: String,
-        placeholder: String,
-        optional: Bool = false,
-        multiline: Bool = false,
-        text: Binding<String>,
-        focus: Field,
-        suggestions: [String] = [],
-        appendsSuggestions: Bool = false
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Text(label.uppercased())
-                    .font(.inter(11, weight: .semibold))
-                    .foregroundStyle(Theme.textSecondary)
-                    .tracking(0.8)
-                if optional {
-                    Text("optional")
-                        .font(.inter(10))
-                        .foregroundStyle(Theme.cream.opacity(0.3))
-                }
-            }
-
-            ZStack(alignment: .topLeading) {
-                if text.wrappedValue.isEmpty {
-                    Text(placeholder)
+            ZStack(alignment: .leading) {
+                if query.isEmpty {
+                    Text("A film, a director, or a feeling…")
                         .font(.dearBellaBody)
-                        .foregroundStyle(Theme.cream.opacity(0.3))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, multiline ? 14 : 12)
+                        .foregroundStyle(Theme.cream.opacity(0.35))
                         .allowsHitTesting(false)
                 }
-
-                if multiline {
-                    TextEditor(text: text)
-                        .focused($focusedField, equals: focus)
-                        .font(.dearBellaBody)
-                        .foregroundStyle(Theme.cream)
-                        .scrollContentBackground(.hidden)
-                        .frame(minHeight: 84)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                } else {
-                    TextField("", text: text)
-                        .focused($focusedField, equals: focus)
-                        .font(.dearBellaBody)
-                        .foregroundStyle(Theme.cream)
-                        .submitLabel(.next)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                }
+                TextField("", text: $query)
+                    .focused($isTyping)
+                    .font(.dearBellaBody)
+                    .foregroundStyle(Theme.cream)
+                    .submitLabel(.search)
             }
-            .background(Color.white.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Theme.cream.opacity(0.15), lineWidth: 1)
-            )
 
-            SuggestionChips(options: suggestions) { option in
-                apply(option, to: text, appending: appendsSuggestions)
+            if !query.isEmpty {
+                Button {
+                    query = ""
+                    search.clearFilms()
+                    search.clearPeople()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 15))
+                        .foregroundStyle(Theme.cream.opacity(0.35))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 15)
+        .padding(.vertical, 14)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Theme.cream.opacity(0.16), lineWidth: 1)
+        )
+        .onChange(of: query) { _, text in
+            search.searchFilms(text)
+            search.searchPeople(text)
+        }
+    }
+
+    /// Films and people for whatever is being typed. Picking one turns it into
+    /// a chip and empties the box, ready for the next thing.
+    private var results: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            FilmResultRow(films: search.films) { film in
+                tasteStore.profile.favouriteFilm = film.title ?? ""
+                clearSearch()
+            }
+            PersonResultRow(people: search.people) { person in
+                tasteStore.profile.director = person.name
+                clearSearch()
             }
         }
     }
 
-    /// A chip either answers the question or adds to the answer. Replacing
-    /// would throw away a considered sentence someone had already typed, so
-    /// the "why" field extends instead — and a repeated tap is treated as a
-    /// mis-tap rather than duplicated.
-    private func apply(_ option: String, to text: Binding<String>, appending: Bool) {
-        let current = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+    /// What Bella has been told so far, each removable. Showing it as chips
+    /// rather than filled-in fields keeps the screen a question with answers
+    /// attached, instead of a form in a half-completed state.
+    @ViewBuilder
+    private var chosen: some View {
+        let items = [
+            (tasteStore.profile.favouriteFilm, "film"),
+            (tasteStore.profile.director, "person"),
+            (tasteStore.profile.why, "why"),
+        ].filter { !$0.0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
-        guard appending, !current.isEmpty else {
-            text.wrappedValue = option
-            return
+        if !items.isEmpty {
+            FlowChips(items: items.map(\.0)) { value in
+                remove(value)
+            }
         }
-        guard !current.localizedCaseInsensitiveContains(option) else { return }
-        text.wrappedValue = "\(current), \(option.lowercasedFirst)"
+    }
+
+    private var reasonChips: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("OR WHAT YOU'RE AFTER")
+                .font(.inter(11, weight: .semibold))
+                .foregroundStyle(Theme.textSecondary)
+                .tracking(0.8)
+
+            SuggestionChips(options: TasteSuggestions.reasons) { reason in
+                appendReason(reason)
+            }
+        }
     }
 
     private var findButton: some View {
         Button {
-            focusedField = nil
+            isTyping = false
+            commitQueryIfUnmatched()
             Task { await viewModel.find(taste: tasteStore.profile, context: context) }
         } label: {
             Group {
@@ -233,8 +185,47 @@ struct FindSomethingView: View {
             }
         }
         .buttonStyle(.pill(.primary))
-        .opacity(tasteStore.profile.isUsable ? 1 : 0.4)
-        .disabled(!tasteStore.profile.isUsable || viewModel.isThinking)
+        .opacity(canSearch ? 1 : 0.4)
+        .disabled(!canSearch || viewModel.isThinking)
+    }
+
+    private var canSearch: Bool {
+        tasteStore.profile.isUsable
+            || !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    // MARK: - Editing what was said
+
+    private func clearSearch() {
+        query = ""
+        search.clearFilms()
+        search.clearPeople()
+        isTyping = false
+    }
+
+    /// Anything typed and not picked from the results is taken at face value —
+    /// "something slow and sad" is a real request, not a failed search.
+    private func commitQueryIfUnmatched() {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        appendReason(trimmed)
+        clearSearch()
+    }
+
+    private func appendReason(_ text: String) {
+        let current = tasteStore.profile.why.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !current.isEmpty else {
+            tasteStore.profile.why = text
+            return
+        }
+        guard !current.localizedCaseInsensitiveContains(text) else { return }
+        tasteStore.profile.why = "\(current), \(text.lowercasedFirst)"
+    }
+
+    private func remove(_ value: String) {
+        if tasteStore.profile.favouriteFilm == value { tasteStore.profile.favouriteFilm = "" }
+        if tasteStore.profile.director == value { tasteStore.profile.director = "" }
+        if tasteStore.profile.why == value { tasteStore.profile.why = "" }
     }
 
     // MARK: - Result
@@ -325,11 +316,4 @@ struct FindSomethingView: View {
         .padding(.top, 8)
         .accessibilityLabel("Close")
     }
-}
-
-#Preview {
-    FindSomethingView(context: TasteContext(films: []))
-        .environmentObject(WatchlistStore())
-        .environmentObject(TasteProfileStore())
-        .environmentObject(OnboardingStore())
 }

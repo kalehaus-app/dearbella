@@ -36,16 +36,45 @@ struct SuggestionChips: View {
     }
 }
 
+/// What Bella has been told so far, each removable.
+///
+/// Wraps rather than scrolling: these are the answers, so none of them should
+/// be off-screen — a horizontal row would hide the thing someone is about to
+/// search on.
+struct FlowChips: View {
+    let items: [String]
+    let onRemove: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(items, id: \.self) { item in
+                HStack(spacing: 8) {
+                    Text(item)
+                        .font(.inter(14, weight: .semibold))
+                        .foregroundStyle(Theme.ink)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+
+                    Button { onRemove(item) } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Theme.ink.opacity(0.5))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Remove \(item)")
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .background(Theme.highlight)
+                .clipShape(Capsule())
+            }
+        }
+    }
+}
+
 /// The stock answers offered under each question.
 enum TasteSuggestions {
 
-    /// Directors and actors people can name without thinking, spread across
-    /// tastes so the row isn't eight versions of the same sensibility.
-    static let names = [
-        "Quentin Tarantino", "Greta Gerwig", "Christopher Nolan", "Wes Anderson",
-        "Bong Joon-ho", "Denis Villeneuve", "Sofia Coppola", "Jordan Peele",
-        "Hayao Miyazaki", "Martin Scorsese", "Ari Aster", "Céline Sciamma",
-    ]
 
     /// The hard question made tappable.
     ///
