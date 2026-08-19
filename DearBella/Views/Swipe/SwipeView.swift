@@ -1,12 +1,15 @@
 import SwiftUI
 
-/// The Match tab: pick a vibe, swipe a deck dealt to fit it, and a few cards
-/// later get matched with one film.
+/// The Swipe tab: a deck of films to fill your list from.
+///
+/// It opens already dealing — no picker in front of it, because a screen
+/// asking what you want before showing you anything is a wall in front of the
+/// only thing the tab does. The filter row switches pools mid-flow instead.
 ///
 /// Drag right to like (saves to the watchlist), left to pass; the buttons do
-/// the same. Handles loading, load failure, and running out of cards.
-struct MatchView: View {
-    @StateObject private var viewModel = MatchDeckViewModel()
+/// the same. This tab collects; deciding happens in Match, from what's saved.
+struct SwipeView: View {
+    @StateObject private var viewModel = SwipeFeedViewModel()
     @EnvironmentObject private var watchlist: WatchlistStore
     @EnvironmentObject private var store: OnboardingStore
 
@@ -14,18 +17,9 @@ struct MatchView: View {
     @State private var showReward = false
     @State private var likeCount = 0                 // drives the success haptic
     @State private var detailMovie: SwipeMovie?
-    @State private var showBracket = false
 
     private let swipeThreshold: CGFloat = 110
 
-    /// Dismissing the match any way — the button or a swipe down — starts the
-    /// next round, so the shortlist can never be shown twice.
-    private var matchBinding: Binding<Bool> {
-        Binding(
-            get: { viewModel.isMatchReady },
-            set: { if !$0 { viewModel.startNewRound() } }
-        )
-    }
 
     /// What Bella knows about them, so the deck is picked to the vibe *and* to
     /// their taste rather than the vibe alone.
@@ -44,6 +38,7 @@ struct MatchView: View {
             Theme.background.ignoresSafeArea()
             content
         }
+        .task { await viewModel.loadInitial(context: tasteContext) }
         .sensoryFeedback(.success, trigger: likeCount)
         .overlay(alignment: .top) {
             if showReward {
@@ -55,32 +50,14 @@ struct MatchView: View {
         .fullScreenCover(item: $detailMovie) { movie in
             MovieDetailView(movie: movie) { viewModel.hide($0) }
         }
-        .fullScreenCover(isPresented: $showBracket) {
-            BracketFlow()
-                .environmentObject(watchlist)
-                .environmentObject(HiddenFilmsStore.shared)
-        }
-        .fullScreenCover(isPresented: matchBinding) {
-            MatchResultView(shortlist: viewModel.sessionLikes, vibe: viewModel.vibe) {
-                viewModel.startNewRound()
-            }
-            .environmentObject(watchlist)
-        }
     }
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.source == nil {
-            MatchVibePicker(
-                onSelect: { source in
-                    Task { await viewModel.choose(source, context: tasteContext) }
-                },
-                onBracket: { showBracket = true }
-            )
-        } else if viewModel.isLoading {
+        if viewModel.isLoading {
             message {
                 ProgressView().tint(Theme.cyan)
-                Text("Bella's picking films for you…")
+                Text(viewModel.filter.vibe == nil ? "Loading films…" : "Bella's picking films for you…")
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream.opacity(0.7))
             }
@@ -100,13 +77,13 @@ struct MatchView: View {
                 Image(systemName: "checkmark.circle")
                     .font(.system(size: 44))
                     .foregroundStyle(Theme.cyan)
-                Text("That's everything for this one")
+                Text("That's everything here for now")
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream)
                     .multilineTextAlignment(.center)
-                Button("Try something else") { viewModel.changeSource() }
-                    .font(.dearBellaButton)
-                    .foregroundStyle(Theme.cyan)
+                Text("Try another filter above.")
+                    .font(.dearBellaCaption)
+                    .foregroundStyle(Theme.cream.opacity(0.6))
             }
         } else {
             deck
@@ -144,30 +121,43 @@ struct MatchView: View {
         }
     }
 
-    /// Names the vibe in play and offers the way back — someone whose mood has
-    /// changed shouldn't have to swipe out a deck they no longer want.
+    /// Title, then the pools. Changing filter is a chip tap rather than a
+    /// separate screen, so switching moods never costs the deck you're in.
     private var deckHeader: some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(viewModel.source?.title ?? "Match")
-                    .font(.dmSerif(28))
-                    .foregroundStyle(Theme.cream)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Text("Swipe right on anything you'd watch")
-                    .font(.dearBellaCaption)
-                    .foregroundStyle(Theme.cream.opacity(0.5))
-            }
-            Spacer()
-            Button { viewModel.changeSource() } label: {
-                Text("Change")
-                    .font(.inter(13, weight: .semibold))
-                    .foregroundStyle(Theme.cyan)
-            }
-            .buttonStyle(.plain)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Swipe")
+                .font(.dearBellaTitle)
+                .foregroundStyle(Theme.cream)
+                .padding(.horizontal, 20)
+
+            filterRow
         }
-        .padding(.horizontal, 20)
         .padding(.top, 12)
+    }
+
+    private var filterRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(SwipeFilter.all) { option in
+                    let isSelected = viewModel.filter == option
+
+                    Button {
+                        Task { await viewModel.apply(option, context: tasteContext) }
+                    } label: {
+                        Text(option.title)
+                            .font(.inter(13, weight: .semibold))
+                            .foregroundStyle(isSelected ? Theme.ink : Theme.cream)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(isSelected ? Theme.cyan : Color.white.opacity(0.07))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(isSelected ? [.isSelected] : [])
+                }
+            }
+            .padding(.horizontal, 20)
+        }
     }
 
     private var buttons: some View {
@@ -244,7 +234,7 @@ struct MatchView: View {
 }
 
 #Preview {
-    MatchView()
+    SwipeView()
         .environmentObject(WatchlistStore())
         .environmentObject(OnboardingStore())
 }

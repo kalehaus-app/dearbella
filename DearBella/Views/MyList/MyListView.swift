@@ -16,6 +16,7 @@ struct MyListView: View {
     @State private var status: FilmStatus = .watchlist
     @State private var selectedGenre: String?
     @State private var showShareCard = false
+    @State private var showMatch = false
     @State private var sheetTarget: FilmSheetTarget?
 
     private let columns = [
@@ -59,6 +60,7 @@ struct MyListView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         header
                         statusPicker
+                        matchButton
                         shareButton
                         TasteInsightSection(viewModel: viewModel, context: tasteContext)
                         if !presentGenres.isEmpty {
@@ -88,6 +90,10 @@ struct MyListView: View {
             FilmDetailSheet(filmID: target.id)
                 .environmentObject(watchlist)
                 .environmentObject(HiddenFilmsStore.shared)
+        }
+        .fullScreenCover(isPresented: $showMatch) {
+            MatchFromListView(films: watchlist.films(in: .watchlist))
+                .environmentObject(watchlist)
         }
         .fullScreenCover(isPresented: $showShareCard) {
             ShareCardSheet(films: ShareCardData.topTitles(from: watchlist.films))
@@ -143,16 +149,40 @@ struct MyListView: View {
         .padding(.horizontal, 20)
     }
 
+    /// The decision half of the app, and the reason collecting is worth doing.
+    /// Only offered from the watchlist shelf with something to narrow down —
+    /// there's nothing to match between one film, and matching a shelf of films
+    /// you've already seen isn't the question anyone has.
+    @ViewBuilder
+    private var matchButton: some View {
+        let candidates = watchlist.films(in: .watchlist)
+
+        if candidates.count >= 2 {
+            Button { showMatch = true } label: {
+                Label("Get a match", systemImage: "sparkles")
+                    .font(.dearBellaButton)
+                    .foregroundStyle(Theme.ink)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Theme.cyan)
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 20)
+        }
+    }
+
     /// Entry point for the monthly recap share card.
     private var shareButton: some View {
         Button { showShareCard = true } label: {
             Label("Share my month", systemImage: "square.and.arrow.up")
-                .font(.dearBellaButton)
-                .foregroundStyle(Theme.ink)
+                .font(.inter(15, weight: .semibold))
+                .foregroundStyle(Theme.cream)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
-                .background(Theme.cyan)
+                .background(Color.white.opacity(0.07))
                 .clipShape(Capsule())
+                .overlay(Capsule().stroke(Theme.cream.opacity(0.18), lineWidth: 1))
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 20)

@@ -1,46 +1,27 @@
 import Foundation
 
-/// Drives Match: a vibe is chosen, Bella deals a deck to fit it, and a few
-/// cards later the round resolves into one film.
+/// Drives the Swipe feed: a deck of films to fill your list from.
 ///
-/// The deck is Claude-curated per vibe rather than TMDB's popularity list, so
-/// every card is already in the right neighbourhood — the old deck showed
-/// whatever was trending and hoped. When a vibe's deck runs dry it refills from
-/// popular films rather than dead-ending, since a deck that stops is worse than
-/// a deck that drifts.
+/// There's no gate in front of it — it opens already dealing, because a screen
+/// asking what you want before showing you anything is a wall in front of the
+/// only thing the tab does. The filter changes the pool mid-flow instead.
 ///
-/// Liking saves to the watchlist, but that's the view's job (it holds the
-/// store); this model stays focused on the deck, the round, and history.
+/// Swipe collects; it doesn't decide. Deciding happens in Match, from what's
+/// already been saved here. Liking saves to the watchlist, but that's the
+/// view's job (it holds the store); this model stays on the deck and history.
 @MainActor
-final class MatchDeckViewModel: ObservableObject {
-    /// What the deck was built from. Nil means the picker is still showing.
-    @Published private(set) var source: MatchSource?
-
-    /// The vibe behind the deck, when there is one — the match screen credits
-    /// it, and a genre deck has none.
-    var vibe: MatchVibe? { source?.vibe }
+final class SwipeFeedViewModel: ObservableObject {
+    /// The pool currently being dealt from. Starts on everything, so the deck
+    /// is live the moment the tab opens.
+    @Published private(set) var filter: SwipeFilter = .everything
 
     @Published private(set) var deck: [SwipeMovie] = []
     @Published private(set) var isLoading = false
     @Published private(set) var error: String?
     @Published private(set) var exhausted = false
 
-    /// Films liked in this sitting. Swiping that only ever adds to a list is
-    /// a deferred decision; once enough cards are in, these become the
-    /// shortlist Bella picks tonight's film from.
-    @Published private(set) var sessionLikes: [SwipeMovie] = []
-    @Published private(set) var isMatchReady = false
 
-    /// Cards swiped since the last match.
-    private var swipesThisSession = 0
 
-    /// Short on purpose. The payoff has to arrive before swiping starts to
-    /// feel like a chore, and a fast decision is the whole point.
-    private let swipesPerMatch = 5
-
-    /// A match needs a real choice behind it — picking "the one film you
-    /// liked" isn't a decision, it's an echo.
-    private let likesPerMatch = 2
 
     private let history = SwipeHistoryStore.shared
     private let hidden = HiddenFilmsStore.shared
@@ -60,34 +41,66 @@ final class MatchDeckViewModel: ObservableObject {
     /// The card currently on top.
     var topMovie: SwipeMovie? { deck.first }
 
-    /// Chooses a vibe or a genre and deals its deck.
-    func choose(_ source: MatchSource, context: TasteContext) async {
-        self.source = source
+    /// Opens the deck on whatever filter is current. Safe to call repeatedly.
+    func loadInitial(context: TasteContext) async {
+        guard deck.isEmpty, !isFetching else { return }
+        self.context = context
+        await loadDeck()
+    }
+
+    /// Switches pools mid-flow. The deck is replaced rather than appended to,
+    /// since the point of changing filter is to stop seeing the old pool.
+    func apply(_ filter: SwipeFilter, context: TasteContext) async {
+        guard filter != self.filter else { return }
+        self.filter = filter
         self.context = context
         deck = []
         error = nil
         exhausted = false
         sourceExhausted = false
         page = 0
-        startNewRound()
         await loadDeck()
     }
 
-    /// Back to the picker, so a different mood is one tap away.
-    func changeSource() {
-        source = nil
-        deck = []
-        error = nil
-        exhausted = false
-        startNewRound()
+    private func loadDeck() async {
+        switch filter {
+        case .everything:       await fetchMore()
+        case .newReleases:      await loadNewReleases()
+        case .genre(let id, _): await loadGenreDeck(id)
+        case .mood(let vibe):   await loadVibeDeck(vibe)
+        }
     }
 
-    private func loadDeck() async {
-        switch source {
-        case .vibe(let vibe):           await loadVibeDeck(vibe)
-        case .genre(let id, _):         await loadGenreDeck(id)
-        case nil:                       break
+    /// Recent releases, straight from TMDB.
+    private func loadNewReleases() async {
+        guard !isFetching else { return }
+        isFetching = true
+        isLoading = deck.isEmpty
+        defer { isFetching = false; isLoading = false }
+
+        let movies = await tmdb.recentReleases()
+        let fresh = usable(movies)
+
+        if fresh.isEmpty {
+            // Nothing new left unswiped — widen rather than dead-end.
+            sourceExhausted = true
+            await fetchMore()
+        } else {
+            deck.append(contentsOf: fresh)
+            error = nil
         }
+    }
+
+    /// Cards worth showing: real art, not already swiped, hidden, or in hand.
+    private func usable(_ movies: [TMDBMovie]) -> [SwipeMovie] {
+        movies
+            .compactMap(SwipeMovie.init(from:))
+            .filter { movie in
+                movie.posterPath?.isEmpty == false
+                    && !history.hasSeen(movie.id)
+                    && !hidden.isHidden(id: movie.id)
+                    && !deck.contains { $0.id == movie.id }
+            }
     }
 
     /// Genres come straight from TMDB: instant, free, and popularity is a fair
@@ -113,15 +126,7 @@ final class MatchDeckViewModel: ObservableObject {
                 return
             }
 
-            let fresh = movies
-                .compactMap(SwipeMovie.init(from:))
-                .filter { movie in
-                    movie.posterPath?.isEmpty == false
-                        && !history.hasSeen(movie.id)
-                        && !hidden.isHidden(id: movie.id)
-                        && !deck.contains { $0.id == movie.id }
-                }
-
+            let fresh = usable(movies)
             if !fresh.isEmpty {
                 deck.append(contentsOf: fresh)
                 error = nil
@@ -186,17 +191,10 @@ final class MatchDeckViewModel: ObservableObject {
                 return
             }
 
-            let unseen = movies
-                .compactMap(SwipeMovie.init(from:))
-                .filter { movie in
-                    // Skip films with no poster — TMDB "popular" includes
-                    // new/upcoming titles that have no poster yet, which would
-                    // otherwise show (and save) as a blank gradient.
-                    movie.posterPath?.isEmpty == false
-                        && !history.hasSeen(movie.id)
-                        && !hidden.isHidden(id: movie.id)
-                        && !deck.contains { $0.id == movie.id }
-                }
+            // `usable` also drops posterless entries — TMDB "popular" includes
+            // upcoming titles with no art yet, which would otherwise show (and
+            // save) as a blank gradient.
+            let unseen = usable(movies)
 
             if !unseen.isEmpty {
                 deck.append(contentsOf: unseen)
@@ -212,34 +210,12 @@ final class MatchDeckViewModel: ObservableObject {
 
     func like(_ movie: SwipeMovie) {
         history.recordLike(movie.id)
-        sessionLikes.append(movie)
-        countSwipe()
         advance(past: movie)
     }
 
     func pass(_ movie: SwipeMovie) {
         history.recordPass(movie.id)
-        countSwipe()
         advance(past: movie)
-    }
-
-    /// Offers a verdict once the round is up and there's something to choose
-    /// between. Falling short of either bar just carries on dealing cards
-    /// rather than interrupting — there's nothing to decide between one film,
-    /// and nothing at all to decide between none.
-    private func countSwipe() {
-        swipesThisSession += 1
-        guard swipesThisSession >= swipesPerMatch,
-              sessionLikes.count >= likesPerMatch else { return }
-        isMatchReady = true
-    }
-
-    /// Called when the match is dismissed: clears the shortlist so the next
-    /// round starts fresh rather than re-picking from old likes.
-    func startNewRound() {
-        isMatchReady = false
-        swipesThisSession = 0
-        sessionLikes = []
     }
 
     /// "Don't suggest this again": keeps the film out of future fetches and
@@ -254,13 +230,9 @@ final class MatchDeckViewModel: ObservableObject {
         deck.removeAll { $0.id == movie.id }
         guard deck.count <= 3 else { return }
         Task {
-            // Top up from the same source while it still has films; only fall
-            // back to popular ones once it's spent.
-            if source != nil && !sourceExhausted {
-                await loadDeck()
-            } else {
-                await fetchMore()
-            }
+            // Top up from the same pool while it still has films; only widen to
+            // popular ones once it's spent.
+            if sourceExhausted { await fetchMore() } else { await loadDeck() }
         }
     }
 

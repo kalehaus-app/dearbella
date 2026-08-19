@@ -1,13 +1,12 @@
 import SwiftUI
 
-/// Wraps the main app in a bottom tab bar: Home to browse, Match to decide, My
-/// List to keep. Home is first, so after onboarding the app still lands on the
-/// dashboard exactly as before.
+/// Wraps the main app in a bottom tab bar: Home to see what's on, Swipe to
+/// fill your list, My List to decide from it. Home is first, so after
+/// onboarding the app still lands on the dashboard exactly as before.
 ///
-/// Three tabs, not four. Bracket lives inside Match as a second way to decide
-/// rather than holding a tab of its own — a tab is the most valuable space in
-/// the app, and it earns that only by being somewhere people go regularly.
-/// Chat stays reachable via the "Start Chat" CTA on Home.
+/// Three tabs, and one job each. Matching isn't a tab because it isn't a place
+/// you browse — it's what you do with a list once you have one, so it starts
+/// from My List. Bracket and Chat stay reachable from Home.
 struct MainTabView: View {
     @EnvironmentObject private var notifications: NotificationService
     @State private var selection = 0
@@ -20,9 +19,9 @@ struct MainTabView: View {
                 }
                 .tag(0)
 
-            MatchView()
+            SwipeView()
                 .tabItem {
-                    Label("Match", systemImage: "sparkles.rectangle.stack")
+                    Label("Swipe", systemImage: "rectangle.stack")
                 }
                 .tag(1)
 
