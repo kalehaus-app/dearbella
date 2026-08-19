@@ -9,33 +9,33 @@ import SwiftUI
 /// from My List. Bracket and Chat stay reachable from Home.
 struct MainTabView: View {
     @EnvironmentObject private var notifications: NotificationService
-    @State private var selection = 0
+    @EnvironmentObject private var router: AppRouter
 
     var body: some View {
-        TabView(selection: $selection) {
+        TabView(selection: $router.tab) {
             HomeView()
                 .tabItem {
                     Label("Home", systemImage: "house")
                 }
-                .tag(0)
+                .tag(AppRouter.Tab.home)
 
             DiscoverView()
                 .tabItem {
                     Label("Discover", systemImage: "rectangle.stack")
                 }
-                .tag(1)
+                .tag(AppRouter.Tab.discover)
 
             MyListView()
                 .tabItem {
                     Label("My List", systemImage: "bookmark")
                 }
-                .tag(2)
+                .tag(AppRouter.Tab.myList)
         }
         .tint(Theme.cyan)
         // A reminder promises tonight's pick, so it has to land on the tab
         // that shows it, whichever tab was open last.
         .onChange(of: notifications.didOpenFromReminder) { _, fromReminder in
-            if fromReminder { selection = 0 }
+            if fromReminder { router.tab = .home }
         }
     }
 }
@@ -47,4 +47,5 @@ struct MainTabView: View {
         .environmentObject(WatchlistStore())
         .environmentObject(NotificationService.shared)
         .environmentObject(HiddenFilmsStore.shared)
+        .environmentObject(AppRouter())
 }

@@ -10,6 +10,7 @@ struct HomeView: View {
     @EnvironmentObject private var watchlist: WatchlistStore
     @EnvironmentObject private var notifications: NotificationService
     @EnvironmentObject private var tasteStore: TasteProfileStore
+    @EnvironmentObject private var router: AppRouter
     @State private var showComingSoon = false
     @State private var showFindSomething = false
     @State private var showAbout = false
@@ -37,6 +38,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     header
                     findSomethingPanel
+                    startYourListPanel
                     newOnDemandSection
                     MyListPreview()
                     BellaPickCard().id(dailyPickAnchor)
@@ -94,6 +96,48 @@ struct HomeView: View {
             .buttonStyle(.plain)
         }
         .padding(.top, 8)
+    }
+
+    /// Shown only while the list is empty.
+    ///
+    /// Everything downstream — picking a film for tonight, what Bella learns,
+    /// the rows further down this screen — needs a list to work from, so a new
+    /// user's most useful next tap is the one that starts one. Once there's
+    /// something saved this disappears rather than nagging.
+    @ViewBuilder
+    private var startYourListPanel: some View {
+        if watchlist.films.isEmpty {
+            Button {
+                router.tab = .discover
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "rectangle.stack")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.cyan)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Start your list")
+                            .font(.inter(15, weight: .semibold))
+                            .foregroundStyle(Theme.cream)
+                        Text("Swipe through films and save the ones you'd watch.")
+                            .font(.dearBellaCaption)
+                            .foregroundStyle(Theme.cream.opacity(0.55))
+                            .multilineTextAlignment(.leading)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Theme.cream.opacity(0.35))
+                }
+                .padding(14)
+                .background(Color.white.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Theme.cream.opacity(0.14), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     // MARK: - New & On Demand
@@ -184,4 +228,5 @@ struct HomeView: View {
         .environmentObject(WatchlistStore())
         .environmentObject(NotificationService.shared)
         .environmentObject(TasteProfileStore())
+        .environmentObject(AppRouter())
 }
