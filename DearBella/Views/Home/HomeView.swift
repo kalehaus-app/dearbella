@@ -1,13 +1,17 @@
 import SwiftUI
 
-/// The home feed: the "What should I watch tonight?" panel, a New & On Demand
-/// row of recent releases, the My List preview, and Bella's daily pick.
+/// The home feed, and the app's front door.
+///
+/// It leads with "tell me what you love and I'll find your next one", because
+/// that is what the app is for — a screen of poster rows looks like a catalogue
+/// and doesn't do anything. Browsing sits underneath it.
 struct HomeView: View {
     @EnvironmentObject private var store: OnboardingStore
     @EnvironmentObject private var watchlist: WatchlistStore
     @EnvironmentObject private var notifications: NotificationService
+    @EnvironmentObject private var tasteStore: TasteProfileStore
     @State private var showComingSoon = false
-    @State private var showChat = false
+    @State private var showFindSomething = false
     @State private var showAbout = false
     @State private var recentMovies: [SwipeMovie] = []
     @State private var didLoadRecent = false
@@ -32,7 +36,7 @@ struct HomeView: View {
             ScrollViewReader { proxy in
                 VStack(alignment: .leading, spacing: 28) {
                     header
-                    watchTonightPanel
+                    findSomethingPanel
                     newOnDemandSection
                     MyListPreview()
                     BellaPickCard().id(dailyPickAnchor)
@@ -52,9 +56,10 @@ struct HomeView: View {
         }
         .background(Theme.background.ignoresSafeArea())
         .task { await loadRecentReleases() }
-        .fullScreenCover(isPresented: $showChat) {
-            ChatView(context: tasteContext)
+        .fullScreenCover(isPresented: $showFindSomething) {
+            FindSomethingView(context: tasteContext)
                 .environmentObject(watchlist)
+                .environmentObject(tasteStore)
         }
         .sheet(isPresented: $showAbout) {
             AboutView()
@@ -132,25 +137,35 @@ struct HomeView: View {
 
     // MARK: - What should I watch tonight?
 
-    private var watchTonightPanel: some View {
-        Button { showChat = true } label: {
-            ZStack(alignment: .bottomTrailing) {
-                Text("What should I\nwatch tonight?")
-                    .font(.inter(30, weight: .bold, relativeTo: .largeTitle))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    /// The app's primary action. Reads differently once there's a saved
+    /// profile, because coming back to a form you've already filled in should
+    /// feel like picking up, not starting over.
+    private var findSomethingPanel: some View {
+        Button { showFindSomething = true } label: {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(tasteStore.profile.isUsable
+                     ? "Ready when you are."
+                     : "Tell me what you love and I'll find your next one.")
+                    .font(.dmSerif(28, relativeTo: .title))
+                    .foregroundStyle(Theme.ink)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
 
-                Text("Start Chat")
-                    .font(.dearBellaButton)
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.green)
-                    .clipShape(Capsule())
+                HStack(spacing: 8) {
+                    Text(tasteStore.profile.isUsable ? "Find me something" : "Start")
+                        .font(.dearBellaButton)
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 13, weight: .bold))
+                }
+                .foregroundStyle(Theme.cream)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 11)
+                .background(Theme.ink)
+                .clipShape(Capsule())
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(20)
-            .frame(height: 150)
-            .background(Color.blue)
+            .background(Theme.cyan)
             .clipShape(RoundedRectangle(cornerRadius: 18))
         }
         .buttonStyle(.plain)
@@ -165,4 +180,6 @@ struct HomeView: View {
         .environmentObject(OnboardingStore())
         .environmentObject(MovieCatalog())
         .environmentObject(WatchlistStore())
+        .environmentObject(NotificationService.shared)
+        .environmentObject(TasteProfileStore())
 }

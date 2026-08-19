@@ -13,6 +13,7 @@ struct DearBellaApp: App {
     @StateObject private var watchlistStore = WatchlistStore()
     @StateObject private var hiddenFilmsStore = HiddenFilmsStore.shared
     @StateObject private var notifications = NotificationService.shared
+    @StateObject private var tasteStore = TasteProfileStore()
 
     var body: some Scene {
         WindowGroup {
@@ -22,6 +23,7 @@ struct DearBellaApp: App {
                 .environmentObject(watchlistStore)
                 .environmentObject(hiddenFilmsStore)
                 .environmentObject(notifications)
+                .environmentObject(tasteStore)
                 // Registers the delegate before launch finishes, so a reminder
                 // tapped from a cold start still routes to tonight's pick.
                 .task { notifications.start() }

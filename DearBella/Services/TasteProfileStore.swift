@@ -1,0 +1,47 @@
+import Foundation
+
+/// What the user has told Bella they love, in their own words.
+///
+/// Onboarding already collects genres and a top five, but those describe *what*
+/// someone likes. The field that matters here is `why` — "the storyline and old
+/// Hollywood" says more about what to recommend next than a genre list ever
+/// does, and it's the one thing a recommender can actually reason with rather
+/// than filter on.
+///
+/// Answers persist, so returning is one tap rather than the same form again.
+struct TasteProfile: Codable, Equatable {
+    var director = ""
+    var favouriteFilm = ""
+    var why = ""
+
+    /// Enough to ask Bella with. The film is the anchor; without it there's
+    /// nothing specific to reason from.
+    var isUsable: Bool {
+        !favouriteFilm.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var isEmpty: Bool {
+        director.isEmpty && favouriteFilm.isEmpty && why.isEmpty
+    }
+}
+
+@MainActor
+final class TasteProfileStore: ObservableObject {
+    @Published var profile: TasteProfile {
+        didSet { persist() }
+    }
+
+    private let key = "taste.profile"
+
+    init() {
+        profile = (UserDefaults.standard.data(forKey: key))
+            .flatMap { try? JSONDecoder().decode(TasteProfile.self, from: $0) }
+            ?? TasteProfile()
+    }
+
+    private func persist() {
+        if let data = try? JSONEncoder().encode(profile) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
+}

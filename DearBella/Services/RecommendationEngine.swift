@@ -99,6 +99,86 @@ struct RecommendationEngine {
         return RecommendationResult(intro: output.intro, films: resolved)
     }
 
+    // MARK: - Find me something
+
+    /// One film, chosen from what the user says they love, with a reason that
+    /// answers them rather than describing the film.
+    ///
+    /// The reason is the point. "You liked Once Upon a Time in Hollywood for
+    /// the old-Hollywood texture, so watch this" is a friend talking; a plot
+    /// summary is a catalogue. So the prompt is told to quote their own words
+    /// back and to justify the pick against them.
+    func findSomething(
+        taste: TasteProfile,
+        context: TasteContext,
+        exclude: [String]
+    ) async throws -> RecommendedFilm? {
+        let avoid = await Self.blocked(context, plus: exclude)
+
+        let director = taste.director.trimmingCharacters(in: .whitespacesAndNewlines)
+        let film = taste.favouriteFilm.trimmingCharacters(in: .whitespacesAndNewlines)
+        let why = taste.why.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        var told = ["- A film they love: \(film)"]
+        if !director.isEmpty {
+            told.append("- A director or actor they love: \(director)")
+        }
+        if !why.isEmpty {
+            told.append("- What they love about it, in their words: \"\(why)\"")
+        }
+
+        let prompt = """
+        They've told you, in their own words:
+        \(told.joined(separator: "\n"))
+
+        What else you know about their taste:
+        \(profile(context))
+
+        Do NOT recommend: \(list(avoid))
+
+        Recommend exactly ONE film. It must genuinely deliver the thing they
+        said they loved — not merely share a genre or a director with it.
+
+        The reason is the whole point. Address them as "you", name the specific
+        quality that connects the two films, and where they gave you their own
+        words, use them back. Two sentences at most. Write "you loved Heat for
+        the professionalism, so watch this" — never a plot summary.
+        """
+
+        let tool = ClaudeTool(
+            name: "present_daily_pick",
+            description: "Present one film chosen from what the user says they love.",
+            inputSchema: claudeJSONSchema("""
+            {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string" },
+                "year": { "type": "integer" },
+                "reason": { "type": "string", "description": "One or two sentences connecting it to what they said they love, addressed to them." }
+              },
+              "required": ["title", "year", "reason"]
+            }
+            """)
+        )
+
+        let pick = try await claude.generate(
+            system: persona,
+            userPrompt: prompt,
+            tool: tool,
+            as: DailyPickToolInput.self
+        )
+
+        let movie = await tmdb.searchMovie(title: pick.title, year: pick.year)
+        return RecommendedFilm(
+            title: pick.title,
+            year: pick.year,
+            reason: pick.reason,
+            posterPath: movie?.posterPath,
+            tmdbID: movie?.id,
+            genres: movie?.genreNames ?? []
+        )
+    }
+
     // MARK: - Daily pick
 
     /// Picks ONE film for tonight from the user's taste, with a witty personal

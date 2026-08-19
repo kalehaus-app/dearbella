@@ -165,6 +165,13 @@ struct RecommendedFilm: Identifiable {
     let tmdbID: Int?
     let genres: [String]
 
+    /// Title with the year, when we have one — two films share a name often
+    /// enough that the year is part of knowing which one was meant.
+    var displayTitle: String {
+        guard let year else { return title }
+        return "\(title) (\(year))"
+    }
+
     var savedFilm: SavedFilm {
         SavedFilm(
             id: tmdbID.map(String.init) ?? "\(title)-\(year ?? 0)",
