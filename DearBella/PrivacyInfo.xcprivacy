@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  Apple requires this manifest for App Store submission. Two things it has
+	  to answer: what data leaves the device, and why any "required reason"
+	  API is being called.
+
+	  DearBella has no accounts and no analytics. Your list, ratings, notes and
+	  taste picks live in UserDefaults on the device. Recommendation requests
+	  go through the app's own proxy to Claude and TMDB carrying only what
+	  you asked for — no identifier, nothing stored server-side — which is why
+	  nothing is declared as collected below.
+	-->
+	<key>NSPrivacyTracking</key>
+	<false/>
+
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!-- UserDefaults: the entire on-device library, plus the poster
+			     and portrait caches. Read and written only by this app. -->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
