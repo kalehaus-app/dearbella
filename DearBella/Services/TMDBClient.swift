@@ -17,7 +17,71 @@ struct TMDBClient: Sendable {
     var hasAPIKey: Bool { true }
 
     /// Searches for a movie and returns the best (first) match.
+    /// Resolves a film title to its TMDB record — and therefore its poster.
+    ///
+    /// Titles reaching this method aren't always clean. Claude writes them the
+    /// way a person would say them out loud ("Cassavetes' A Woman Under the
+    /// Influence"), and TMDB's search is an exact-ish title match, so one
+    /// possessive turns into a posterless card that then follows the film into
+    /// My List. Rather than trust the first string, we try progressively
+    /// plainer readings of it, and only then drop the year constraint.
     func searchMovie(title: String, year: Int?) async -> TMDBMovie? {
+        let candidates = Self.titleCandidates(title)
+
+        for candidate in candidates {
+            if let hit = await searchMovieOnce(title: candidate, year: year) { return hit }
+        }
+        // A wrong year shouldn't cost the poster either: TMDB dates a film by
+        // its first release anywhere, which often isn't the year people quote.
+        if year != nil {
+            for candidate in candidates {
+                if let hit = await searchMovieOnce(title: candidate, year: nil) { return hit }
+            }
+        }
+        return nil
+    }
+
+    /// Plainer and plainer readings of a title, best guess first, deduped.
+    static func titleCandidates(_ raw: String) -> [String] {
+        var out: [String] = []
+
+        func add(_ value: String) {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard trimmed.count >= 2, !out.contains(trimmed) else { return }
+            out.append(trimmed)
+        }
+
+        let base = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        add(base)
+
+        // Quotation marks and emphasis around the whole title.
+        let unquoted = base.trimmingCharacters(in: CharacterSet(charactersIn: "\"'“”‘’*_"))
+        add(unquoted)
+
+        // A trailing parenthetical — "(1974)", "(dir. Cassavetes)".
+        let deparenthesized = unquoted.replacingOccurrences(
+            of: #"\s*\([^)]*\)\s*$"#,
+            with: "",
+            options: .regularExpression
+        )
+        add(deparenthesized)
+
+        // A possessive director credit in front of the title. Both spellings:
+        // "Cassavetes' A Woman…" and "Hitchcock's Psycho". This one is blunt —
+        // it would also eat the front of "The Handmaid's Tale" — which is why
+        // it's tried last, after the untouched title has already had its go.
+        let depossessed = deparenthesized.replacingOccurrences(
+            of: #"^\p{L}[\p{L}\p{M}.\-]*(?:\s+[\p{L}\p{M}.\-]+){0,2}['’]s?\s+"#,
+            with: "",
+            options: .regularExpression
+        )
+        add(depossessed)
+
+        return out
+    }
+
+    /// One search/movie request. `nil` on no match, a bad response, or an error.
+    private func searchMovieOnce(title: String, year: Int?) async -> TMDBMovie? {
         guard var components = URLComponents(string: baseURL) else { return nil }
 
         var queryItems = [
@@ -37,10 +101,36 @@ struct TMDBClient: Sendable {
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
                 return nil
             }
-            return try JSONDecoder().decode(TMDBSearchResponse.self, from: data).results.first
+            let results = try JSONDecoder().decode(TMDBSearchResponse.self, from: data).results
+            return Self.bestMatch(in: results, year: year)
         } catch {
             return nil
         }
+    }
+
+    /// TMDB orders by relevance, which for a remake or a same-named short can
+    /// put the wrong film first. When we know the year, a poster-backed result
+    /// from that year (or either side of it) beats raw relevance.
+    private static func bestMatch(in results: [TMDBMovie], year: Int?) -> TMDBMovie? {
+        guard !results.isEmpty else { return nil }
+        guard let year else {
+            return results.first { $0.posterPath != nil } ?? results.first
+        }
+
+        func releaseYear(_ movie: TMDBMovie) -> Int? {
+            movie.releaseDate.flatMap { Int($0.prefix(4)) }
+        }
+
+        if let exact = results.first(where: { releaseYear($0) == year && $0.posterPath != nil }) {
+            return exact
+        }
+        if let near = results.first(where: {
+            guard let found = releaseYear($0) else { return false }
+            return abs(found - year) <= 1 && $0.posterPath != nil
+        }) {
+            return near
+        }
+        return results.first { $0.posterPath != nil } ?? results.first
     }
 
     /// Films matching a search, for picking one rather than typing it exactly.

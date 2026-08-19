@@ -11,6 +11,7 @@ struct FilmSheetTarget: Identifiable, Equatable {
 /// list" recommendations. The AI pieces only call the API on an explicit tap.
 struct MyListView: View {
     @EnvironmentObject private var watchlist: WatchlistStore
+    @EnvironmentObject private var onboarding: OnboardingStore
     @StateObject private var viewModel = MyListViewModel()
 
     @State private var status: FilmStatus = .watchlist
@@ -18,15 +19,24 @@ struct MyListView: View {
     @State private var showShareCard = false
     @State private var showMatch = false
     @State private var sheetTarget: FilmSheetTarget?
+    @State private var showAddFilm = false
 
     private let columns = [
         GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
     ]
 
-    /// Saved films as taste input for the AI features.
+    /// Saved films as taste input for the AI features, seeded with the picks
+    /// from onboarding so a short list still gets a personal answer.
     private var tasteContext: TasteContext {
-        TasteContext(films: watchlist.films)
+        TasteContext(
+            films: watchlist.films,
+            onboardingGenres: SampleData.genres
+                .filter { onboarding.selectedGenreIDs.contains($0.id) }
+                .map(\.name),
+            onboardingFilms: onboarding.selectedFilms.map(\.title),
+            onboardingDirectors: onboarding.selectedDirectors.map(\.name)
+        )
     }
 
     /// The films in the selected status.
@@ -76,9 +86,10 @@ struct MyListView: View {
             }
         }
         .task {
-            // Quietly backfill genres for films saved before genre tracking,
-            // so the filter pills populate. No-op once every film has genres.
-            await watchlist.backfillGenresIfNeeded()
+            // Quietly repair films missing genres or a poster — including any
+            // whose title TMDB couldn't match first time round. No-op once
+            // every saved film has a complete record.
+            await watchlist.backfillMissingMetadata()
         }
         .onChange(of: status) { _, _ in
             // A genre pill from the previous tab may not exist in this one.
@@ -95,6 +106,12 @@ struct MyListView: View {
             MatchFromListView(films: watchlist.films(in: .watchlist))
                 .environmentObject(watchlist)
         }
+        .sheet(isPresented: $showAddFilm) {
+            // Opening from the Watched tab means they're logging something
+            // they've seen, so that's the shelf the sheet starts on.
+            AddFilmSheet(shelf: status == .archived ? .watchlist : status)
+                .environmentObject(watchlist)
+        }
         .fullScreenCover(isPresented: $showShareCard) {
             ShareCardSheet(films: ShareCardData.topTitles(from: watchlist.films))
         }
@@ -103,12 +120,27 @@ struct MyListView: View {
     // MARK: - Header
 
     private var header: some View {
-        Text("My List")
-            .font(.dearBellaTitle)
-            .foregroundStyle(Theme.cream)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
+        HStack(alignment: .firstTextBaseline) {
+            Text("My List")
+                .font(.dearBellaTitle)
+                .foregroundStyle(Theme.cream)
+
+            Spacer()
+
+            Button {
+                showAddFilm = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                    .frame(width: 34, height: 34)
+                    .background(Circle().fill(Theme.surface))
+            }
+            .accessibilityLabel("Add a film")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
     }
 
     /// Status tabs with live counts, so the size of each shelf is visible
@@ -351,4 +383,5 @@ struct MyListView: View {
 #Preview {
     MyListView()
         .environmentObject(WatchlistStore())
+        .environmentObject(OnboardingStore())
 }

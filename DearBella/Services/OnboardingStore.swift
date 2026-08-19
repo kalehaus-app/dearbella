@@ -21,6 +21,11 @@ final class OnboardingStore: ObservableObject {
         didSet { persistSelections() }
     }
 
+    /// Director IDs the user named, in pick order.
+    @Published var selectedDirectorIDs: [String] {
+        didSet { persistSelections() }
+    }
+
     /// Whether onboarding is finished. Drives which screen the app shows.
     @Published var hasCompletedOnboarding: Bool {
         didSet { UserDefaults.standard.set(hasCompletedOnboarding, forKey: Keys.completed) }
@@ -29,9 +34,15 @@ final class OnboardingStore: ObservableObject {
     /// The most films the user may pick on the "top 5" screen.
     let maxFilms = 5
 
+    /// The most directors the user may pick. Fewer than the film cap on
+    /// purpose: naming five directors is a much harder ask than naming five
+    /// films, and three is already a strong signal.
+    let maxDirectors = 3
+
     private enum Keys {
         static let genres = "onboarding.selectedGenreIDs"
         static let films = "onboarding.selectedFilmIDs"
+        static let directors = "onboarding.selectedDirectorIDs"
         static let completed = "onboarding.hasCompleted"
     }
 
@@ -39,6 +50,7 @@ final class OnboardingStore: ObservableObject {
         let defaults = UserDefaults.standard
         selectedGenreIDs = Set(defaults.stringArray(forKey: Keys.genres) ?? [])
         selectedFilmIDs = defaults.stringArray(forKey: Keys.films) ?? []
+        selectedDirectorIDs = defaults.stringArray(forKey: Keys.directors) ?? []
         hasCompletedOnboarding = defaults.bool(forKey: Keys.completed)
     }
 
@@ -84,6 +96,32 @@ final class OnboardingStore: ObservableObject {
         }
     }
 
+    // MARK: - Directors
+
+    func isDirectorSelected(_ id: String) -> Bool {
+        selectedDirectorIDs.contains(id)
+    }
+
+    var isDirectorSelectionFull: Bool {
+        selectedDirectorIDs.count >= maxDirectors
+    }
+
+    /// Adds the director if there's room, or removes them if already picked.
+    func toggleDirector(_ id: String) {
+        if let index = selectedDirectorIDs.firstIndex(of: id) {
+            selectedDirectorIDs.remove(at: index)
+        } else if selectedDirectorIDs.count < maxDirectors {
+            selectedDirectorIDs.append(id)
+        }
+    }
+
+    /// The user's picked directors resolved to full `Director` values.
+    var selectedDirectors: [Director] {
+        selectedDirectorIDs.compactMap { id in
+            SampleData.directors.first { $0.id == id }
+        }
+    }
+
     // MARK: - Lifecycle
 
     func completeOnboarding() {
@@ -94,6 +132,7 @@ final class OnboardingStore: ObservableObject {
     func resetOnboarding() {
         selectedGenreIDs = []
         selectedFilmIDs = []
+        selectedDirectorIDs = []
         hasCompletedOnboarding = false
     }
 
@@ -101,5 +140,6 @@ final class OnboardingStore: ObservableObject {
         let defaults = UserDefaults.standard
         defaults.set(Array(selectedGenreIDs), forKey: Keys.genres)
         defaults.set(selectedFilmIDs, forKey: Keys.films)
+        defaults.set(selectedDirectorIDs, forKey: Keys.directors)
     }
 }

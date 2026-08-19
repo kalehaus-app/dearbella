@@ -19,6 +19,7 @@ struct RootView: View {
         .task {
             // Fetch real TMDB posters for the curated films once on launch.
             await catalog.loadPostersIfNeeded()
+            await catalog.loadDirectorPortraitsIfNeeded()
         }
     }
 }

@@ -62,7 +62,7 @@ struct RecommendationEngine {
                   "items": {
                     "type": "object",
                     "properties": {
-                      "title": { "type": "string" },
+                      "title": { "type": "string", "description": "The film's exact release title and nothing else — no director name, no quotation marks, no year, no commentary." },
                       "year": { "type": "integer" },
                       "reason": { "type": "string", "description": "One witty, personal sentence." }
                     },
@@ -160,7 +160,7 @@ struct RecommendationEngine {
             {
               "type": "object",
               "properties": {
-                "title": { "type": "string" },
+                "title": { "type": "string", "description": "The film's exact release title and nothing else — no director name, no quotation marks, no year, no commentary." },
                 "year": { "type": "integer" },
                 "reason": { "type": "string", "description": "One or two sentences connecting it to what they said they love, addressed to them." }
               },
@@ -212,7 +212,7 @@ struct RecommendationEngine {
             {
               "type": "object",
               "properties": {
-                "title": { "type": "string" },
+                "title": { "type": "string", "description": "The film's exact release title and nothing else — no director name, no quotation marks, no year, no commentary." },
                 "year": { "type": "integer" },
                 "reason": { "type": "string", "description": "One witty, personal sentence in Bella's voice." }
               },
@@ -287,6 +287,9 @@ struct RecommendationEngine {
             "- Favorite genres: \(list(context.genres))",
             "- Films on their list: \(list(context.topFilms))"
         ]
+        if !context.directors.isEmpty {
+            lines.append("- Directors they named as their own: \(list(context.directors))")
+        }
         if !context.loved.isEmpty {
             lines.append("- LOVED, weight these heaviest: \(list(context.loved))")
         }

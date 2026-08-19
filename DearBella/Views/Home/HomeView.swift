@@ -28,7 +28,8 @@ struct HomeView: View {
             onboardingGenres: SampleData.genres
                 .filter { store.selectedGenreIDs.contains($0.id) }
                 .map(\.name),
-            onboardingFilms: store.selectedFilms.map(\.title)
+            onboardingFilms: store.selectedFilms.map(\.title),
+            onboardingDirectors: store.selectedDirectors.map(\.name)
         )
     }
 

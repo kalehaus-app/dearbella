@@ -13,6 +13,11 @@ struct TasteContext {
     let genres: [String]
     let topFilms: [String]
 
+    /// Directors they named during onboarding. The strongest single statement
+    /// of taste we ever collect — a name carries a whole sensibility, where a
+    /// genre carries a shelf.
+    let directors: [String]
+
     /// Films they were enthusiastic about — the strongest positive signal.
     let loved: [String]
     /// Films they enjoyed without loving.
@@ -27,6 +32,7 @@ struct TasteContext {
     init(
         genres: [String],
         topFilms: [String],
+        directors: [String] = [],
         loved: [String] = [],
         liked: [String] = [],
         disliked: [String] = [],
@@ -35,6 +41,7 @@ struct TasteContext {
     ) {
         self.genres = genres
         self.topFilms = topFilms
+        self.directors = directors
         self.loved = loved
         self.liked = liked
         self.disliked = disliked
@@ -53,8 +60,10 @@ struct TasteContext {
     init(
         films: [SavedFilm],
         onboardingGenres: [String] = [],
-        onboardingFilms: [String] = []
+        onboardingFilms: [String] = [],
+        onboardingDirectors: [String] = []
     ) {
+        directors = onboardingDirectors
         let opinionated = films.filter { $0.hasTasteSignal }
 
         loved = Self.titles(of: opinionated.filter { Self.sentiment(of: $0) == .loved })

@@ -15,6 +15,19 @@ struct GreatPicksView: View {
         return picks.isEmpty ? Array(SampleData.films.prefix(4)) : picks
     }
 
+    /// Reads their directors back to them, so the pick they just made visibly
+    /// landed somewhere rather than vanishing into a settings screen.
+    private var directorLine: String {
+        let names = store.selectedDirectors.map(\.name)
+        switch names.count {
+        case 0: return ""
+        case 1: return "We'll keep an eye out for \(names[0])."
+        case 2: return "We'll keep an eye out for \(names[0]) and \(names[1])."
+        default:
+            return "We'll keep an eye out for \(names.dropLast().joined(separator: ", ")) and \(names[names.count - 1])."
+        }
+    }
+
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
@@ -24,11 +37,21 @@ struct GreatPicksView: View {
 
                 fannedPosters
 
-                Text("Great picks!")
-                    .font(.title).bold()
-                    .foregroundStyle(Theme.textPrimary)
+                VStack(spacing: 6) {
+                    Text("Great picks!")
+                        .font(.title).bold()
+                        .foregroundStyle(Theme.textPrimary)
 
-                PageDots(count: 3, activeIndex: 2)
+                    if !directorLine.isEmpty {
+                        Text(directorLine)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+                }
+
+                PageDots(count: 4, activeIndex: 3)
 
                 Spacer()
 

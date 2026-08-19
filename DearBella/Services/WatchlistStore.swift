@@ -135,32 +135,51 @@ final class WatchlistStore: ObservableObject {
 
     // MARK: - Backfill
 
-    /// One-time, background backfill: for saved films missing genre data
-    /// (saved before genres were tracked), look them up on TMDB and update the
-    /// record. Only fetches films that lack genres; TMDB failures are skipped.
-    func backfillGenresIfNeeded() async {
-        let missing = films.filter { $0.genres.isEmpty }
-        guard !missing.isEmpty else { return }
+    /// Background repair pass for saved films with holes in their record.
+    ///
+    /// Two ways a film ends up incomplete. It may predate genre tracking, or —
+    /// more visibly — it arrived from a recommendation whose title TMDB
+    /// couldn't match, so it has no poster and sits in the grid as a bare
+    /// gradient. `searchMovie` now tries plainer readings of a title, so a
+    /// second attempt often succeeds where the first didn't; when it does, the
+    /// decorated title is replaced by the real one too, since "Cassavetes' A
+    /// Woman Under the Influence" is not what the film is called.
+    ///
+    /// Only films actually missing something are fetched. TMDB failures are
+    /// skipped and simply retried next time.
+    func backfillMissingMetadata() async {
+        let incomplete = films.filter { $0.genres.isEmpty || $0.posterPath == nil }
+        guard !incomplete.isEmpty else { return }
 
         let client = TMDBClient.shared
-        var resolved: [String: [String]] = [:]
-        for film in missing {
-            let movie = await client.searchMovie(title: film.title, year: film.year)
-            let genres = movie?.genreNames ?? []
-            if !genres.isEmpty { resolved[film.id] = genres }
+        var resolved: [String: TMDBMovie] = [:]
+        for film in incomplete {
+            if let movie = await client.searchMovie(title: film.title, year: film.year) {
+                resolved[film.id] = movie
+            }
         }
         guard !resolved.isEmpty else { return }
 
         // Re-read `films` (it may have changed during the awaits) and apply
-        // resolved genres in one assignment — a single persist + UI update.
+        // everything in one assignment — a single persist + UI update.
         films = films.map { film in
-            guard film.genres.isEmpty, let genres = resolved[film.id] else { return film }
-            return SavedFilm(
+            guard let movie = resolved[film.id] else { return film }
+
+            let genres = film.genres.isEmpty ? movie.genreNames : film.genres
+            let poster = film.posterPath ?? movie.posterPath
+
+            // Only rewrite the title when the stored one needed cleaning up to
+            // match at all — otherwise a legitimate alternate title would be
+            // silently replaced by TMDB's preferred spelling.
+            let wasDecorated = TMDBClient.titleCandidates(film.title).count > 1
+            let title = (wasDecorated ? movie.title : nil) ?? film.title
+
+            let updated = SavedFilm(
                 id: film.id,
-                title: film.title,
+                title: title,
                 year: film.year,
-                posterPath: film.posterPath,
-                tmdbID: film.tmdbID,
+                posterPath: poster,
+                tmdbID: film.tmdbID ?? movie.id,
                 genres: genres,
                 status: film.status,
                 rating: film.rating,
@@ -169,6 +188,7 @@ final class WatchlistStore: ObservableObject {
                 watchedAt: film.watchedAt,
                 addedAt: film.addedAt
             )
+            return updated == film ? film : updated
         }
     }
 
