@@ -53,3 +53,28 @@ enum TMDBGenre {
             .sorted { $0.name < $1.name }
     }
 }
+
+
+/// A person from TMDB's search — a director, actor or crew member.
+struct TMDBPerson: Decodable, Identifiable, Hashable {
+    let id: Int
+    let name: String
+    let knownForDepartment: String?
+    let profilePath: String?
+
+    /// "Director" / "Acting" — shown so two people with similar names can be
+    /// told apart at a glance.
+    var role: String? {
+        switch knownForDepartment {
+        case "Directing": return "Director"
+        case "Acting":    return "Actor"
+        case let other:   return other
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case knownForDepartment = "known_for_department"
+        case profilePath = "profile_path"
+    }
+}

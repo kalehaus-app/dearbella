@@ -43,6 +43,56 @@ struct TMDBClient: Sendable {
         }
     }
 
+    /// Films matching a search, for picking one rather than typing it exactly.
+    /// Posterless and irrelevant results are dropped so the row stays useful.
+    func searchMovies(query: String, limit: Int = 12) async -> [TMDBMovie] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2, var components = URLComponents(string: baseURL) else { return [] }
+
+        components.queryItems = [
+            URLQueryItem(name: "path", value: "search/movie"),
+            URLQueryItem(name: "query", value: trimmed),
+            URLQueryItem(name: "include_adult", value: "false"),
+        ]
+        guard let url = components.url else { return [] }
+
+        do {
+            let (data, response) = try await session.data(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return [] }
+            return Array(
+                try JSONDecoder().decode(TMDBSearchResponse.self, from: data).results
+                    .filter { $0.posterPath?.isEmpty == false }
+                    .prefix(limit)
+            )
+        } catch {
+            return []
+        }
+    }
+
+    /// People matching a search — directors and actors, so someone can pick a
+    /// name rather than spell it. Ordered by TMDB's own relevance.
+    func searchPeople(query: String, limit: Int = 10) async -> [TMDBPerson] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= 2, var components = URLComponents(string: baseURL) else { return [] }
+
+        components.queryItems = [
+            URLQueryItem(name: "path", value: "search/person"),
+            URLQueryItem(name: "query", value: trimmed),
+            URLQueryItem(name: "include_adult", value: "false"),
+        ]
+        guard let url = components.url else { return [] }
+
+        struct Response: Decodable { let results: [TMDBPerson] }
+
+        do {
+            let (data, response) = try await session.data(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return [] }
+            return Array(try JSONDecoder().decode(Response.self, from: data).results.prefix(limit))
+        } catch {
+            return []
+        }
+    }
+
     /// Recent releases for the Home "New & On Demand" row (`discover/movie`):
     /// films released in the last ~3 months, sorted by popularity, with enough
     /// votes to be real entries. Posterless results are filtered out so the row

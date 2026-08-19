@@ -17,6 +17,7 @@ struct FindSomethingView: View {
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var viewModel = FindSomethingViewModel()
+    @StateObject private var search = TasteSearchViewModel()
     @FocusState private var focusedField: Field?
 
     private enum Field { case film, director, why }
@@ -44,31 +45,54 @@ struct FindSomethingView: View {
                     Text("Tell me what you love")
                         .font(.dmSerif(30))
                         .foregroundStyle(Theme.cream)
-                    Text("The more specific you are, the better I get.")
+                    Text("Any one of these is enough. Fill in more and I'll get sharper.")
                         .font(.dearBellaBody)
                         .foregroundStyle(Theme.cream.opacity(0.6))
                 }
                 .padding(.top, 56)
 
-                field(
-                    label: "A film you love",
-                    placeholder: "Once Upon a Time in Hollywood",
-                    text: $tasteStore.profile.favouriteFilm,
-                    focus: .film,
-                    suggestions: filmSuggestions
-                )
+                VStack(alignment: .leading, spacing: 8) {
+                    field(
+                        label: "A film you love",
+                        placeholder: "Search any film…",
+                        optional: true,
+                        text: $tasteStore.profile.favouriteFilm,
+                        focus: .film,
+                        suggestions: search.films.isEmpty ? filmSuggestions : []
+                    )
+                    .onChange(of: tasteStore.profile.favouriteFilm) { _, query in
+                        search.searchFilms(query)
+                    }
+
+                    FilmResultRow(films: search.films) { film in
+                        tasteStore.profile.favouriteFilm = film.title ?? ""
+                        search.clearFilms()
+                        focusedField = nil
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    field(
+                        label: "A director or actor you love",
+                        placeholder: "Search any name…",
+                        optional: true,
+                        text: $tasteStore.profile.director,
+                        focus: .director,
+                        suggestions: search.people.isEmpty ? TasteSuggestions.names : []
+                    )
+                    .onChange(of: tasteStore.profile.director) { _, query in
+                        search.searchPeople(query)
+                    }
+
+                    PersonResultRow(people: search.people) { person in
+                        tasteStore.profile.director = person.name
+                        search.clearPeople()
+                        focusedField = nil
+                    }
+                }
 
                 field(
-                    label: "A director or actor you love",
-                    placeholder: "Quentin Tarantino",
-                    optional: true,
-                    text: $tasteStore.profile.director,
-                    focus: .director,
-                    suggestions: TasteSuggestions.names
-                )
-
-                field(
-                    label: "What do you love about it?",
+                    label: "What are you after?",
                     placeholder: "The storyline, and all the old Hollywood",
                     optional: true,
                     multiline: true,

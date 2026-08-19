@@ -119,12 +119,17 @@ struct RecommendationEngine {
         let film = taste.favouriteFilm.trimmingCharacters(in: .whitespacesAndNewlines)
         let why = taste.why.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        var told = ["- A film they love: \(film)"]
+        // Any one of these can stand alone — "anything by Céline Sciamma" is a
+        // complete request — so only what they actually gave is described.
+        var told: [String] = []
+        if !film.isEmpty {
+            told.append("- A film they love: \(film)")
+        }
         if !director.isEmpty {
             told.append("- A director or actor they love: \(director)")
         }
         if !why.isEmpty {
-            told.append("- What they love about it, in their words: \"\(why)\"")
+            told.append("- What they're after, in their words: \"\(why)\"")
         }
 
         let prompt = """
@@ -136,13 +141,16 @@ struct RecommendationEngine {
 
         Do NOT recommend: \(list(avoid))
 
-        Recommend exactly ONE film. It must genuinely deliver the thing they
-        said they loved — not merely share a genre or a director with it.
+        Recommend exactly ONE film that answers what they asked for. It must
+        genuinely deliver the thing they described — not merely share a genre,
+        a cast member or a director with it. If they named a director or actor,
+        the pick need not be that person's work, but it must scratch the same
+        itch; if it is their work, say why that one.
 
         The reason is the whole point. Address them as "you", name the specific
-        quality that connects the two films, and where they gave you their own
-        words, use them back. Two sentences at most. Write "you loved Heat for
-        the professionalism, so watch this" — never a plot summary.
+        quality that connects it to what they told you, and where they gave you
+        their own words, use them back. Two sentences at most. Write "you loved
+        Heat for the professionalism, so watch this" — never a plot summary.
         """
 
         let tool = ClaudeTool(

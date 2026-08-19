@@ -14,10 +14,14 @@ struct TasteProfile: Codable, Equatable {
     var favouriteFilm = ""
     var why = ""
 
-    /// Enough to ask Bella with. The film is the anchor; without it there's
-    /// nothing specific to reason from.
+    /// Enough to ask Bella with. Any one of the three will do: "more films
+    /// like Heat", "anything by Céline Sciamma" and "something with beautiful
+    /// lighting" are all complete requests on their own, and demanding a
+    /// favourite film would turn two of them away.
     var isUsable: Bool {
-        !favouriteFilm.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        [favouriteFilm, director, why].contains {
+            !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
     }
 
     var isEmpty: Bool {
