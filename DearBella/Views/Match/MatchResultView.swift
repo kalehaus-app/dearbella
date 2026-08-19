@@ -1,13 +1,14 @@
 import SwiftUI
 
-/// The moment a swipe session resolves into an actual decision.
+/// The moment a round of swiping resolves into an actual decision.
 ///
 /// Swiping that only adds films to a list defers the choice rather than making
 /// it — the deck never says "watch this one". After a round of cards, Bella
 /// picks one film from everything liked in that sitting and commits to it, the
 /// way the bracket ends on a winner.
-struct SwipeVerdictView: View {
+struct MatchResultView: View {
     let shortlist: [SwipeMovie]
+    let vibe: MatchVibe?
     let onKeepSwiping: () -> Void
 
     @EnvironmentObject private var watchlist: WatchlistStore
@@ -62,7 +63,7 @@ struct SwipeVerdictView: View {
     private var thinking: some View {
         VStack(spacing: 16) {
             ProgressView().tint(Theme.cyan)
-            Text("Bella's deciding…")
+            Text("Finding your match…")
                 .font(.dearBellaBody)
                 .foregroundStyle(Theme.cream.opacity(0.8))
         }
@@ -71,7 +72,7 @@ struct SwipeVerdictView: View {
     private func result(_ movie: SwipeMovie) -> some View {
         ScrollView {
             VStack(spacing: 14) {
-                Text("Watch this tonight")
+                Text("It's a match")
                     .font(.inter(12, weight: .bold))
                     .foregroundStyle(Theme.ink)
                     .padding(.horizontal, 12)
@@ -109,9 +110,10 @@ struct SwipeVerdictView: View {
 
                 actions(movie)
 
-                Text("Picked from the \(shortlist.count) film\(shortlist.count == 1 ? "" : "s") you liked just now.")
+                Text(footnote)
                     .font(.dearBellaCaption)
                     .foregroundStyle(Theme.cream.opacity(0.45))
+                    .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 24)
@@ -148,6 +150,13 @@ struct SwipeVerdictView: View {
         .padding(.horizontal, 12)
     }
 
+    private var footnote: String {
+        let count = shortlist.count
+        let films = "\(count) film\(count == 1 ? "" : "s") you liked"
+        guard let vibe else { return "Picked from the \(films) just now." }
+        return "From the \(films) — \(vibe.title.lowercased())."
+    }
+
     // MARK: - Deciding
 
     /// Shows a pick immediately, then lets Bella's reasoning catch up.
@@ -167,8 +176,8 @@ struct SwipeVerdictView: View {
         blurb = try? await BracketBella.blurb(title: chosen.title, overview: chosen.overview)
         isThinking = false
 
-        // Ask about reminders here, and only here: they've just seen Bella
-        // decide for them, so "want this every Friday?" needs no explaining.
+        // Ask about reminders here, and only here: they've just been matched
+        // with something, so "want this every Friday?" needs no explaining.
         await NotificationService.shared.refreshAuthorization()
         if NotificationService.shared.shouldOfferReminders {
             try? await Task.sleep(nanoseconds: 1_200_000_000)

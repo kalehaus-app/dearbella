@@ -1,25 +1,41 @@
 import SwiftUI
 
-/// The Swipe tab: a Tinder-style deck of popular films. Drag right to like
-/// (saves to the watchlist), left to pass; buttons do the same. Handles
-/// loading, load failure, and running out of cards.
-struct SwipeView: View {
-    @StateObject private var viewModel = SwipeDeckViewModel()
+/// The Match tab: pick a vibe, swipe a deck dealt to fit it, and a few cards
+/// later get matched with one film.
+///
+/// Drag right to like (saves to the watchlist), left to pass; the buttons do
+/// the same. Handles loading, load failure, and running out of cards.
+struct MatchView: View {
+    @StateObject private var viewModel = MatchDeckViewModel()
     @EnvironmentObject private var watchlist: WatchlistStore
+    @EnvironmentObject private var store: OnboardingStore
 
     @State private var drag: CGSize = .zero
     @State private var showReward = false
     @State private var likeCount = 0                 // drives the success haptic
     @State private var detailMovie: SwipeMovie?
+    @State private var showBracket = false
 
     private let swipeThreshold: CGFloat = 110
 
-    /// Dismissing the verdict any way — the button or a swipe down — starts
-    /// the next round, so the shortlist can never be shown twice.
-    private var verdictBinding: Binding<Bool> {
+    /// Dismissing the match any way — the button or a swipe down — starts the
+    /// next round, so the shortlist can never be shown twice.
+    private var matchBinding: Binding<Bool> {
         Binding(
-            get: { viewModel.isVerdictReady },
+            get: { viewModel.isMatchReady },
             set: { if !$0 { viewModel.startNewRound() } }
+        )
+    }
+
+    /// What Bella knows about them, so the deck is picked to the vibe *and* to
+    /// their taste rather than the vibe alone.
+    private var tasteContext: TasteContext {
+        TasteContext(
+            films: watchlist.films,
+            onboardingGenres: SampleData.genres
+                .filter { store.selectedGenreIDs.contains($0.id) }
+                .map(\.name),
+            onboardingFilms: store.selectedFilms.map(\.title)
         )
     }
 
@@ -28,7 +44,6 @@ struct SwipeView: View {
             Theme.background.ignoresSafeArea()
             content
         }
-        .task { await viewModel.loadInitial() }
         .sensoryFeedback(.success, trigger: likeCount)
         .overlay(alignment: .top) {
             if showReward {
@@ -40,8 +55,13 @@ struct SwipeView: View {
         .fullScreenCover(item: $detailMovie) { movie in
             MovieDetailView(movie: movie) { viewModel.hide($0) }
         }
-        .fullScreenCover(isPresented: verdictBinding) {
-            SwipeVerdictView(shortlist: viewModel.sessionLikes) {
+        .fullScreenCover(isPresented: $showBracket) {
+            BracketFlow()
+                .environmentObject(watchlist)
+                .environmentObject(HiddenFilmsStore.shared)
+        }
+        .fullScreenCover(isPresented: matchBinding) {
+            MatchResultView(shortlist: viewModel.sessionLikes, vibe: viewModel.vibe) {
                 viewModel.startNewRound()
             }
             .environmentObject(watchlist)
@@ -50,10 +70,17 @@ struct SwipeView: View {
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.isLoading {
+        if viewModel.vibe == nil {
+            MatchVibePicker(
+                onSelect: { vibe in
+                    Task { await viewModel.choose(vibe, context: tasteContext) }
+                },
+                onBracket: { showBracket = true }
+            )
+        } else if viewModel.isLoading {
             message {
                 ProgressView().tint(Theme.cyan)
-                Text("Loading films…")
+                Text("Bella's picking films for you…")
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream.opacity(0.7))
             }
@@ -73,11 +100,13 @@ struct SwipeView: View {
                 Image(systemName: "checkmark.circle")
                     .font(.system(size: 44))
                     .foregroundStyle(Theme.cyan)
-                Text("You've swiped through everything for now")
+                Text("That's everything for this one")
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
+                Button("Try another vibe") { viewModel.changeVibe() }
+                    .font(.dearBellaButton)
+                    .foregroundStyle(Theme.cyan)
             }
         } else {
             deck
@@ -88,12 +117,7 @@ struct SwipeView: View {
 
     private var deck: some View {
         VStack(spacing: 20) {
-            Text("Swipe")
-                .font(.dearBellaTitle)
-                .foregroundStyle(Theme.cream)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
+            deckHeader
 
             ZStack {
                 // One card behind, for a subtle stacked look.
@@ -118,6 +142,32 @@ struct SwipeView: View {
             buttons
                 .padding(.bottom, 8)
         }
+    }
+
+    /// Names the vibe in play and offers the way back — someone whose mood has
+    /// changed shouldn't have to swipe out a deck they no longer want.
+    private var deckHeader: some View {
+        HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(viewModel.vibe?.title ?? "Match")
+                    .font(.dmSerif(28))
+                    .foregroundStyle(Theme.cream)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text("Swipe right on anything you'd watch")
+                    .font(.dearBellaCaption)
+                    .foregroundStyle(Theme.cream.opacity(0.5))
+            }
+            Spacer()
+            Button { viewModel.changeVibe() } label: {
+                Text("Change")
+                    .font(.inter(13, weight: .semibold))
+                    .foregroundStyle(Theme.cyan)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
     }
 
     private var buttons: some View {
@@ -194,6 +244,7 @@ struct SwipeView: View {
 }
 
 #Preview {
-    SwipeView()
+    MatchView()
         .environmentObject(WatchlistStore())
+        .environmentObject(OnboardingStore())
 }

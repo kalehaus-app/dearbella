@@ -1,13 +1,21 @@
 import Foundation
 
-/// Manages the swipe deck: fetches batches of popular films, filters out ones
-/// already swiped, refills as the user runs low, records likes/passes to the
-/// swipe history, and lazily enriches the surfaced cards with runtime.
+/// Drives Match: a vibe is chosen, Bella deals a deck to fit it, and a few
+/// cards later the round resolves into one film.
 ///
-/// Liking saves to the watchlist — but that's done by the view (which holds the
-/// WatchlistStore); this model stays focused on the deck + history.
+/// The deck is Claude-curated per vibe rather than TMDB's popularity list, so
+/// every card is already in the right neighbourhood — the old deck showed
+/// whatever was trending and hoped. When a vibe's deck runs dry it refills from
+/// popular films rather than dead-ending, since a deck that stops is worse than
+/// a deck that drifts.
+///
+/// Liking saves to the watchlist, but that's the view's job (it holds the
+/// store); this model stays focused on the deck, the round, and history.
 @MainActor
-final class SwipeDeckViewModel: ObservableObject {
+final class MatchDeckViewModel: ObservableObject {
+    /// The chosen vibe. Nil means the picker is still showing.
+    @Published private(set) var vibe: MatchVibe?
+
     @Published private(set) var deck: [SwipeMovie] = []
     @Published private(set) var isLoading = false
     @Published private(set) var error: String?
@@ -17,22 +25,30 @@ final class SwipeDeckViewModel: ObservableObject {
     /// a deferred decision; once enough cards are in, these become the
     /// shortlist Bella picks tonight's film from.
     @Published private(set) var sessionLikes: [SwipeMovie] = []
-    @Published private(set) var isVerdictReady = false
+    @Published private(set) var isMatchReady = false
 
-    /// Cards swiped since the last verdict.
+    /// Cards swiped since the last match.
     private var swipesThisSession = 0
 
     /// Short on purpose. The payoff has to arrive before swiping starts to
     /// feel like a chore, and a fast decision is the whole point.
-    private let swipesPerVerdict = 5
+    private let swipesPerMatch = 5
 
-    /// A verdict needs a real choice behind it — picking "the one film you
+    /// A match needs a real choice behind it — picking "the one film you
     /// liked" isn't a decision, it's an echo.
-    private let likesPerVerdict = 2
+    private let likesPerMatch = 2
 
     private let history = SwipeHistoryStore.shared
     private let hidden = HiddenFilmsStore.shared
     private let tmdb = TMDBClient.shared
+    private let engine = RecommendationEngine.shared
+
+    /// Taste profile for the deck request, handed in by the view.
+    private var context = TasteContext(films: [])
+
+    /// Set once the vibe's curated deck is spent, after which refills come
+    /// from popular films rather than stopping.
+    private var vibeExhausted = false
     private var page = 0
     private var isFetching = false
     private var runtimeCache: [Int: Int] = [:]
@@ -40,13 +56,60 @@ final class SwipeDeckViewModel: ObservableObject {
     /// The card currently on top.
     var topMovie: SwipeMovie? { deck.first }
 
-    func loadInitial() async {
-        guard deck.isEmpty, !isFetching, !exhausted else { return }
-        await fetchMore()
+    /// Chooses a vibe and deals its deck.
+    func choose(_ vibe: MatchVibe, context: TasteContext) async {
+        self.vibe = vibe
+        self.context = context
+        deck = []
+        error = nil
+        exhausted = false
+        vibeExhausted = false
+        page = 0
+        startNewRound()
+        await loadVibeDeck()
     }
 
-    /// Fetches successive popular pages until it adds unseen films, hits a page
-    /// cap (treated as exhausted), or fails.
+    /// Back to the picker, so a different mood is one tap away.
+    func changeVibe() {
+        vibe = nil
+        deck = []
+        error = nil
+        exhausted = false
+        startNewRound()
+    }
+
+    /// Asks Bella for films fitting the vibe. On failure the deck falls back to
+    /// popular films rather than leaving an empty screen — a worse deck beats
+    /// no deck when someone is standing there wanting to watch something.
+    private func loadVibeDeck() async {
+        guard let vibe, !isFetching else { return }
+        isFetching = true
+        isLoading = true
+        defer { isFetching = false; isLoading = false }
+
+        do {
+            let films = try await engine.matchDeck(
+                vibe: vibe,
+                context: context,
+                exclude: deck.map(\.title)
+            )
+            let fresh = films.filter { !history.hasSeen($0.id) && !hidden.isHidden(id: $0.id) }
+
+            if fresh.isEmpty {
+                vibeExhausted = true
+                await fetchMore()
+            } else {
+                deck = fresh
+            }
+        } catch {
+            vibeExhausted = true
+            await fetchMore()
+        }
+    }
+
+    /// Top-up from TMDB's popular list, used once the vibe's curated deck is
+    /// spent. Runs through successive pages until it adds unseen films, hits a
+    /// page cap (treated as exhausted), or fails.
     func fetchMore() async {
         guard !isFetching, !exhausted else { return }
         isFetching = true
@@ -63,7 +126,7 @@ final class SwipeDeckViewModel: ObservableObject {
                 // First try with an empty deck → treat as a load failure;
                 // otherwise we've reached the end of the catalog.
                 if deck.isEmpty && attempts == 1 {
-                    error = "Couldn't load movies right now. Check your connection (and TMDB key) and try again."
+                    error = "Couldn't load films right now. Check your connection and try again."
                 } else {
                     exhausted = true
                 }
@@ -113,15 +176,15 @@ final class SwipeDeckViewModel: ObservableObject {
     /// and nothing at all to decide between none.
     private func countSwipe() {
         swipesThisSession += 1
-        guard swipesThisSession >= swipesPerVerdict,
-              sessionLikes.count >= likesPerVerdict else { return }
-        isVerdictReady = true
+        guard swipesThisSession >= swipesPerMatch,
+              sessionLikes.count >= likesPerMatch else { return }
+        isMatchReady = true
     }
 
-    /// Called when the verdict is dismissed: clears the shortlist so the next
+    /// Called when the match is dismissed: clears the shortlist so the next
     /// round starts fresh rather than re-picking from old likes.
     func startNewRound() {
-        isVerdictReady = false
+        isMatchReady = false
         swipesThisSession = 0
         sessionLikes = []
     }
@@ -136,8 +199,15 @@ final class SwipeDeckViewModel: ObservableObject {
 
     private func advance(past movie: SwipeMovie) {
         deck.removeAll { $0.id == movie.id }
-        if deck.count <= 3 {
-            Task { await fetchMore() }
+        guard deck.count <= 3 else { return }
+        Task {
+            // Ask Bella for more of the same vibe while she still has some;
+            // only fall back to popular films once she's out.
+            if vibe != nil && !vibeExhausted {
+                await loadVibeDeck()
+            } else {
+                await fetchMore()
+            }
         }
     }
 

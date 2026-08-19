@@ -1,8 +1,13 @@
 import SwiftUI
 
-/// Wraps the main app in a bottom tab bar. Home is the first tab, so after
-/// onboarding the app still lands on the dashboard exactly as before. Chat is
-/// NOT a tab — it stays reachable via the "Start Chat" CTA on Home.
+/// Wraps the main app in a bottom tab bar: Home to browse, Match to decide, My
+/// List to keep. Home is first, so after onboarding the app still lands on the
+/// dashboard exactly as before.
+///
+/// Three tabs, not four. Bracket lives inside Match as a second way to decide
+/// rather than holding a tab of its own — a tab is the most valuable space in
+/// the app, and it earns that only by being somewhere people go regularly.
+/// Chat stays reachable via the "Start Chat" CTA on Home.
 struct MainTabView: View {
     @EnvironmentObject private var notifications: NotificationService
     @State private var selection = 0
@@ -15,23 +20,17 @@ struct MainTabView: View {
                 }
                 .tag(0)
 
+            MatchView()
+                .tabItem {
+                    Label("Match", systemImage: "sparkles.rectangle.stack")
+                }
+                .tag(1)
+
             MyListView()
                 .tabItem {
                     Label("My List", systemImage: "bookmark")
                 }
-                .tag(1)
-
-            SwipeView()
-                .tabItem {
-                    Label("Swipe", systemImage: "rectangle.stack")
-                }
                 .tag(2)
-
-            BracketView()
-                .tabItem {
-                    Label("Bracket", systemImage: "trophy")
-                }
-                .tag(3)
         }
         .tint(Theme.cyan)
         // A reminder promises tonight's pick, so it has to land on the tab
@@ -48,4 +47,5 @@ struct MainTabView: View {
         .environmentObject(MovieCatalog())
         .environmentObject(WatchlistStore())
         .environmentObject(NotificationService.shared)
+        .environmentObject(HiddenFilmsStore.shared)
 }

@@ -99,6 +99,94 @@ struct RecommendationEngine {
         return RecommendationResult(intro: output.intro, films: resolved)
     }
 
+    // MARK: - Match deck
+
+    /// Builds a deck of films for one Match vibe.
+    ///
+    /// This is the difference between the old swipe deck and Match: cards used
+    /// to come from TMDB's popularity list, which knows nothing about the user
+    /// or what they're in the mood for. Here Claude picks to the vibe *and* the
+    /// taste profile, and TMDB is used only to resolve each title to real art —
+    /// so a bad card is a bad judgement rather than an accident of what happens
+    /// to be trending.
+    ///
+    /// Titles that can't be resolved are dropped rather than shown as blanks.
+    func matchDeck(
+        vibe: MatchVibe,
+        context: TasteContext,
+        exclude: [String],
+        count: Int = 12
+    ) async throws -> [SwipeMovie] {
+        let avoid = await Self.blocked(context, plus: exclude)
+
+        let seeds = vibe.seeds.isEmpty
+            ? "no fixed examples — use your judgement"
+            : list(vibe.seeds)
+
+        let prompt = """
+        The user wants films that fit this vibe:
+        \(vibe.title) — \(vibe.brief)
+
+        Films that unmistakably ARE this vibe (match their spirit, and do not
+        simply return these): \(seeds)
+
+        Their taste profile, for tie-breaking within the vibe:
+        \(profile(context))
+
+        Do NOT include: \(list(avoid))
+
+        Return exactly \(count) films that genuinely fit the vibe. Range across
+        eras and countries rather than \(count) versions of the same film, and
+        favour films that are actually good over films that are merely famous.
+        One short sentence each on why it fits.
+        """
+
+        let tool = ClaudeTool(
+            name: "present_match_deck",
+            description: "Present films matching a vibe, for a swipeable deck.",
+            inputSchema: claudeJSONSchema("""
+            {
+              "type": "object",
+              "properties": {
+                "intro": { "type": "string", "description": "Unused for the deck; one witty line about the vibe." },
+                "films": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "title": { "type": "string" },
+                      "year": { "type": "integer" },
+                      "reason": { "type": "string", "description": "One short sentence on why it fits the vibe." }
+                    },
+                    "required": ["title", "year", "reason"]
+                  }
+                }
+              },
+              "required": ["intro", "films"]
+            }
+            """)
+        )
+
+        let output = try await claude.generate(
+            system: persona,
+            userPrompt: prompt,
+            tool: tool,
+            as: RecommendationToolInput.self
+        )
+
+        var deck: [SwipeMovie] = []
+        var seen = Set<Int>()
+        for suggestion in output.films {
+            guard let movie = await tmdb.searchMovie(title: suggestion.title, year: suggestion.year),
+                  movie.posterPath?.isEmpty == false,
+                  let card = SwipeMovie(from: movie),
+                  seen.insert(card.id).inserted
+            else { continue }
+            deck.append(card)
+        }
+        return deck
+    }
+
     // MARK: - Daily pick
 
     /// Picks ONE film for tonight from the user's taste, with a witty personal
