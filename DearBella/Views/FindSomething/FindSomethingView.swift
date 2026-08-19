@@ -13,6 +13,7 @@ struct FindSomethingView: View {
 
     @EnvironmentObject private var watchlist: WatchlistStore
     @EnvironmentObject private var tasteStore: TasteProfileStore
+    @EnvironmentObject private var onboarding: OnboardingStore
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var viewModel = FindSomethingViewModel()
@@ -53,7 +54,8 @@ struct FindSomethingView: View {
                     label: "A film you love",
                     placeholder: "Once Upon a Time in Hollywood",
                     text: $tasteStore.profile.favouriteFilm,
-                    focus: .film
+                    focus: .film,
+                    suggestions: filmSuggestions
                 )
 
                 field(
@@ -61,7 +63,8 @@ struct FindSomethingView: View {
                     placeholder: "Quentin Tarantino",
                     optional: true,
                     text: $tasteStore.profile.director,
-                    focus: .director
+                    focus: .director,
+                    suggestions: TasteSuggestions.names
                 )
 
                 field(
@@ -70,7 +73,11 @@ struct FindSomethingView: View {
                     optional: true,
                     multiline: true,
                     text: $tasteStore.profile.why,
-                    focus: .why
+                    focus: .why,
+                    suggestions: TasteSuggestions.reasons,
+                    // Several things can be true at once about why a film
+                    // lands, so these add up rather than replace each other.
+                    appendsSuggestions: true
                 )
 
                 if let error = viewModel.error {
@@ -87,13 +94,24 @@ struct FindSomethingView: View {
         .scrollDismissesKeyboard(.interactively)
     }
 
+    /// Films we already know they like, so the row is their taste rather than
+    /// a list of famous titles.
+    private var filmSuggestions: [String] {
+        TasteSuggestions.films(
+            onboarding: onboarding.selectedFilms.map(\.title),
+            saved: watchlist.films.map(\.title)
+        )
+    }
+
     private func field(
         label: String,
         placeholder: String,
         optional: Bool = false,
         multiline: Bool = false,
         text: Binding<String>,
-        focus: Field
+        focus: Field,
+        suggestions: [String] = [],
+        appendsSuggestions: Bool = false
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
@@ -143,7 +161,26 @@ struct FindSomethingView: View {
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(Theme.cream.opacity(0.15), lineWidth: 1)
             )
+
+            SuggestionChips(options: suggestions) { option in
+                apply(option, to: text, appending: appendsSuggestions)
+            }
         }
+    }
+
+    /// A chip either answers the question or adds to the answer. Replacing
+    /// would throw away a considered sentence someone had already typed, so
+    /// the "why" field extends instead — and a repeated tap is treated as a
+    /// mis-tap rather than duplicated.
+    private func apply(_ option: String, to text: Binding<String>, appending: Bool) {
+        let current = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard appending, !current.isEmpty else {
+            text.wrappedValue = option
+            return
+        }
+        guard !current.localizedCaseInsensitiveContains(option) else { return }
+        text.wrappedValue = "\(current), \(option.lowercasedFirst)"
     }
 
     private var findButton: some View {
@@ -274,4 +311,11 @@ struct FindSomethingView: View {
         .padding(.top, 8)
         .accessibilityLabel("Close")
     }
+}
+
+#Preview {
+    FindSomethingView(context: TasteContext(films: []))
+        .environmentObject(WatchlistStore())
+        .environmentObject(TasteProfileStore())
+        .environmentObject(OnboardingStore())
 }

@@ -60,6 +60,7 @@ struct HomeView: View {
             FindSomethingView(context: tasteContext)
                 .environmentObject(watchlist)
                 .environmentObject(tasteStore)
+                .environmentObject(store)
         }
         .sheet(isPresented: $showAbout) {
             AboutView()
