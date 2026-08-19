@@ -212,7 +212,7 @@ private struct MatchedFilmView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                Text("It's a match")
+                Text("Ready to watch")
                     .font(.inter(12, weight: .bold))
                     .foregroundStyle(Theme.ink)
                     .padding(.horizontal, 12)
@@ -232,9 +232,9 @@ private struct MatchedFilmView: View {
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
 
-                Text("Watch this one tonight.")
-                    .font(.inter(14))
-                    .foregroundStyle(Theme.cream.opacity(0.75))
+                Text("This is your movie tonight.")
+                    .font(.inter(15, weight: .medium))
+                    .foregroundStyle(Theme.cream.opacity(0.8))
 
                 VStack(spacing: 8) {
                     Link(destination: WatchlistStore.watchURL(for: film)) {

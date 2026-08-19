@@ -64,23 +64,41 @@ final class SwipeFeedViewModel: ObservableObject {
     }
 
     /// Recent releases, straight from TMDB.
+    ///
+    /// Never falls back to popular films the way the other pools do. Popular
+    /// films are mostly old ones, so widening here would quietly fill a shelf
+    /// labelled "new releases" with The Godfather — a filter that changes what
+    /// it means is worse than one that admits it's empty.
     private func loadNewReleases() async {
         guard !isFetching else { return }
         isFetching = true
         isLoading = deck.isEmpty
         defer { isFetching = false; isLoading = false }
 
-        let movies = await tmdb.recentReleases()
-        let fresh = usable(movies)
+        var attempts = 0
+        while attempts < 3 {
+            attempts += 1
+            page += 1
+            let movies = await tmdb.recentReleases(page: page)
 
-        if fresh.isEmpty {
-            // Nothing new left unswiped — widen rather than dead-end.
-            sourceExhausted = true
-            await fetchPopular()
-        } else {
-            deck.append(contentsOf: fresh)
-            error = nil
+            if movies.isEmpty {
+                if deck.isEmpty && attempts == 1 {
+                    error = "Couldn't load films right now. Check your connection and try again."
+                } else {
+                    exhausted = true
+                }
+                return
+            }
+
+            let fresh = usable(movies)
+            if !fresh.isEmpty {
+                deck.append(contentsOf: fresh)
+                error = nil
+                return
+            }
         }
+        // Genuinely through everything recent — say so rather than widening.
+        exhausted = true
     }
 
     /// Cards worth showing: real art, not already swiped, hidden, or in hand.

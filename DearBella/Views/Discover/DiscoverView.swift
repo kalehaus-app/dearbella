@@ -65,10 +65,13 @@ struct DiscoverView: View {
                 Image(systemName: "checkmark.circle")
                     .font(.system(size: 44))
                     .foregroundStyle(Theme.cyan)
-                Text("That's everything here for now")
+                Text(viewModel.filter == .newReleases
+                     ? "You're caught up on new releases"
+                     : "That's everything here for now")
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream)
                     .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
                 Text("Try another filter above.")
                     .font(.dearBellaCaption)
                     .foregroundStyle(Theme.cream.opacity(0.6))

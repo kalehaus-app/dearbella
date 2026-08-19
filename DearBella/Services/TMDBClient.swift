@@ -47,7 +47,7 @@ struct TMDBClient: Sendable {
     /// films released in the last ~3 months, sorted by popularity, with enough
     /// votes to be real entries. Posterless results are filtered out so the row
     /// never shows blank cards. Returns `[]` on failure.
-    func recentReleases() async -> [TMDBMovie] {
+    func recentReleases(page: Int = 1) async -> [TMDBMovie] {
         guard var components = URLComponents(string: baseURL) else { return [] }
 
         let formatter = DateFormatter()
@@ -63,6 +63,7 @@ struct TMDBClient: Sendable {
             URLQueryItem(name: "vote_count.gte", value: "50"),
             URLQueryItem(name: "primary_release_date.gte", value: formatter.string(from: threeMonthsAgo)),
             URLQueryItem(name: "primary_release_date.lte", value: formatter.string(from: today)),
+            URLQueryItem(name: "page", value: String(page)),
         ]
         guard let url = components.url else { return [] }
 

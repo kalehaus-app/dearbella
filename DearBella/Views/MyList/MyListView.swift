@@ -159,7 +159,7 @@ struct MyListView: View {
 
         if candidates.count >= 2 {
             Button { showMatch = true } label: {
-                Label("Get a match", systemImage: "sparkles")
+                Label("Pick a movie", systemImage: "sparkles")
                     .font(.dearBellaButton)
                     .foregroundStyle(Theme.ink)
                     .frame(maxWidth: .infinity)
