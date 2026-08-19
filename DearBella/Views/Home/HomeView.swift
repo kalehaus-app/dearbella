@@ -64,6 +64,7 @@ struct HomeView: View {
                 .environmentObject(watchlist)
                 .environmentObject(tasteStore)
                 .environmentObject(store)
+                .environmentObject(router)
         }
         .sheet(isPresented: $showAbout) {
             AboutView()

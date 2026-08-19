@@ -11,6 +11,7 @@ import SwiftUI
 struct DiscoverView: View {
     @StateObject private var viewModel = SwipeFeedViewModel()
     @EnvironmentObject private var watchlist: WatchlistStore
+    @EnvironmentObject private var onboarding: OnboardingStore
 
     @State private var drag: CGSize = .zero
     @State private var showReward = false
@@ -19,6 +20,19 @@ struct DiscoverView: View {
 
     private let swipeThreshold: CGFloat = 110
 
+    /// Everything Bella knows, for the "For you" pool. Recomputed as films are
+    /// saved and rated, so tapping it always reasons from the current list.
+    private var tasteContext: TasteContext {
+        TasteContext(
+            films: watchlist.films,
+            onboardingGenres: SampleData.genres
+                .filter { onboarding.selectedGenreIDs.contains($0.id) }
+                .map(\.name),
+            onboardingFilms: onboarding.selectedFilms.map(\.title),
+            onboardingDirectors: onboarding.selectedDirectors.map(\.name)
+        )
+    }
+
 
 
     var body: some View {
@@ -26,7 +40,13 @@ struct DiscoverView: View {
             Theme.background.ignoresSafeArea()
             content
         }
-        .task { await viewModel.loadInitial() }
+        .task {
+            viewModel.update(taste: tasteContext)
+            await viewModel.loadInitial()
+        }
+        .onChange(of: watchlist.films) { _, _ in
+            viewModel.update(taste: tasteContext)
+        }
         .sensoryFeedback(.success, trigger: likeCount)
         .overlay(alignment: .top) {
             if showReward {
@@ -40,12 +60,38 @@ struct DiscoverView: View {
         }
     }
 
+    /// "For you" has two empty states and they mean opposite things: one says
+    /// Bella has nothing to go on yet, the other that she's run out of ideas.
+    private var emptyTitle: String {
+        switch viewModel.filter {
+        case .forYou where !viewModel.canPersonalize:
+            return "Bella doesn't know you yet"
+        case .forYou:
+            return "That's everything Bella has for now"
+        case .newReleases:
+            return "You're caught up on new releases"
+        default:
+            return "That's everything here for now"
+        }
+    }
+
+    private var emptyDetail: String {
+        switch viewModel.filter {
+        case .forYou where !viewModel.canPersonalize:
+            return "Save a few films from All, or rate what you've watched, and this fills up."
+        case .forYou:
+            return "Rate a few more in My List and there'll be new ones here."
+        default:
+            return "Try another filter above."
+        }
+    }
+
     @ViewBuilder
     private var content: some View {
         if viewModel.isLoading {
             message {
                 ProgressView().tint(Theme.highlight)
-                Text("Loading films…")
+                Text(viewModel.filter == .forYou ? "Bella's picking for you…" : "Loading films…")
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream.opacity(0.7))
             }
@@ -65,16 +111,16 @@ struct DiscoverView: View {
                 Image(systemName: "checkmark.circle")
                     .font(.system(size: 44))
                     .foregroundStyle(Theme.highlight)
-                Text(viewModel.filter == .newReleases
-                     ? "You're caught up on new releases"
-                     : "That's everything here for now")
+                Text(emptyTitle)
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
-                Text("Try another filter above.")
+                Text(emptyDetail)
                     .font(.dearBellaCaption)
                     .foregroundStyle(Theme.cream.opacity(0.6))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
             }
         } else {
             deck
@@ -227,4 +273,5 @@ struct DiscoverView: View {
 #Preview {
     DiscoverView()
         .environmentObject(WatchlistStore())
+        .environmentObject(OnboardingStore())
 }

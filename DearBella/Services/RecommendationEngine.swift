@@ -278,6 +278,74 @@ struct RecommendationEngine {
         items.isEmpty ? "none" : items.joined(separator: ", ")
     }
 
+    /// A deck of films chosen for this person, for Discover's "For you" pool.
+    ///
+    /// Unlike `recommend`, this returns TMDB records rather than prose: the
+    /// swipe deck needs art, genres and a synopsis per card, and a card with a
+    /// blank poster is worse than one fewer card. Titles Claude names that
+    /// TMDB can't resolve are simply dropped.
+    ///
+    /// `exclude` grows as the deck is dealt, so topping up asks for films that
+    /// haven't already gone past.
+    func forYouDeck(
+        context: TasteContext,
+        exclude: [String],
+        count: Int = 12
+    ) async throws -> [TMDBMovie] {
+        let avoid = await Self.blocked(context, plus: exclude)
+
+        let prompt = """
+        Taste profile:
+        \(profile(context))
+
+        Do NOT recommend (already saved, shown, hidden or disliked): \(list(avoid))
+
+        Name exactly \(count) films this person specifically would want to \
+        discover — weight what they loved and rated highly hardest, and their \
+        stated genres and directors after that. Favour films they are unlikely \
+        to have already seen over the obvious canonical picks.
+        """
+
+        let tool = ClaudeTool(
+            name: "present_for_you_deck",
+            description: "Present a personalized deck of films to discover.",
+            inputSchema: claudeJSONSchema("""
+            {
+              "type": "object",
+              "properties": {
+                "films": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "title": { "type": "string", "description": "The film's exact release title and nothing else — no director name, no quotation marks, no year, no commentary." },
+                      "year": { "type": "integer" }
+                    },
+                    "required": ["title", "year"]
+                  }
+                }
+              },
+              "required": ["films"]
+            }
+            """)
+        )
+
+        let output = try await claude.generate(
+            system: persona,
+            userPrompt: prompt,
+            tool: tool,
+            as: ForYouToolInput.self
+        )
+
+        var resolved: [TMDBMovie] = []
+        for film in output.films {
+            if let movie = await tmdb.searchMovie(title: film.title, year: film.year) {
+                resolved.append(movie)
+            }
+        }
+        return resolved
+    }
+
     /// Renders everything we know about the user's taste. Sections with no data
     /// are left out entirely, so a brand-new user's prompt stays short and gets
     /// richer as they rate things — nothing is ever described as "none" when

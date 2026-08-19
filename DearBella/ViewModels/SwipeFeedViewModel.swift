@@ -23,6 +23,12 @@ final class SwipeFeedViewModel: ObservableObject {
 
 
 
+    /// What the "For you" pool reasons from. The view owns the stores, so it
+    /// hands the current picture down rather than this model reaching for it.
+    private var taste: TasteContext?
+    /// Titles already dealt from "For you", so a top-up asks for new ones.
+    private var dealtForYou: [String] = []
+
     private let history = SwipeHistoryStore.shared
     private let hidden = HiddenFilmsStore.shared
     private let tmdb = TMDBClient.shared
@@ -35,6 +41,18 @@ final class SwipeFeedViewModel: ObservableObject {
 
     /// The card currently on top.
     var topMovie: SwipeMovie? { deck.first }
+
+    /// Keeps the personalized pool current as films are saved and rated.
+    /// Cheap — nothing is fetched until someone taps "For you".
+    func update(taste: TasteContext) {
+        self.taste = taste
+    }
+
+    /// Whether there's enough about this person to personalize a deck at all.
+    var canPersonalize: Bool {
+        guard let taste else { return false }
+        return !taste.topFilms.isEmpty || !taste.genres.isEmpty || !taste.directors.isEmpty
+    }
 
     /// Opens the deck on whatever filter is current. Safe to call repeatedly.
     func loadInitial() async {
@@ -52,11 +70,13 @@ final class SwipeFeedViewModel: ObservableObject {
         exhausted = false
         sourceExhausted = false
         page = 0
+        dealtForYou = []
         await loadDeck()
     }
 
     private func loadDeck() async {
         switch filter {
+        case .forYou:           await loadForYou()
         case .everything:       await fetchMore()
         case .newReleases:      await loadNewReleases()
         case .genre(let id, _): await loadGenreDeck(id)
@@ -99,6 +119,47 @@ final class SwipeFeedViewModel: ObservableObject {
         }
         // Genuinely through everything recent — say so rather than widening.
         exhausted = true
+    }
+
+    /// Films picked for this person by Claude, resolved to real TMDB records.
+    ///
+    /// Never widens to popular films when it runs dry. A shelf labelled "for
+    /// you" quietly filling with whatever is trending is the same lie as
+    /// "new releases" serving The Godfather — better to say it's spent.
+    private func loadForYou() async {
+        guard !isFetching else { return }
+
+        guard let taste, canPersonalize else {
+            exhausted = true
+            return
+        }
+
+        isFetching = true
+        isLoading = deck.isEmpty
+        defer { isFetching = false; isLoading = false }
+
+        do {
+            let movies = try await RecommendationEngine.shared.forYouDeck(
+                context: taste,
+                exclude: dealtForYou
+            )
+
+            let fresh = usable(movies)
+            guard !fresh.isEmpty else {
+                exhausted = true
+                return
+            }
+
+            dealtForYou.append(contentsOf: fresh.map(\.title))
+            deck.append(contentsOf: fresh)
+            error = nil
+        } catch {
+            if deck.isEmpty {
+                self.error = "Couldn't reach Bella just now. Check your connection and try again."
+            } else {
+                exhausted = true
+            }
+        }
     }
 
     /// Cards worth showing: real art, not already swiped, hidden, or in hand.
@@ -224,7 +285,13 @@ final class SwipeFeedViewModel: ObservableObject {
         Task {
             // Top up from the same pool while it still has films; only widen to
             // popular ones once it's spent.
-            if sourceExhausted { await fetchMore() } else { await loadDeck() }
+            if filter == .forYou {
+                await loadForYou()
+            } else if sourceExhausted {
+                await fetchMore()
+            } else {
+                await loadDeck()
+            }
         }
     }
 

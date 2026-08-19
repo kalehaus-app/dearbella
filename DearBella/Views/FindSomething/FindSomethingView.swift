@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// "Tell me what you love and I'll find your next one."
 ///
@@ -16,6 +17,7 @@ struct FindSomethingView: View {
     @EnvironmentObject private var watchlist: WatchlistStore
     @EnvironmentObject private var tasteStore: TasteProfileStore
     @EnvironmentObject private var onboarding: OnboardingStore
+    @EnvironmentObject private var router: AppRouter
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var viewModel = FindSomethingViewModel()
@@ -298,7 +300,7 @@ struct FindSomethingView: View {
 
         return VStack(spacing: 8) {
             Button {
-                watchlist.save(film.savedFilm)
+                add(film)
             } label: {
                 Label(
                     saved ? "In your list" : "Add to my list",
@@ -325,6 +327,23 @@ struct FindSomethingView: View {
             .buttonStyle(.pill(.tertiary))
         }
         .padding(.horizontal, 12)
+    }
+
+    /// Saving is the end of the errand, not a step in it.
+    ///
+    /// The screen used to sit there afterwards with the answer still on it and
+    /// the request still stored, so the next visit opened pre-filled with a
+    /// question already answered. Now the film lands on the list, the ask is
+    /// cleared, and you're put where the film now is.
+    private func add(_ film: RecommendedFilm) {
+        watchlist.save(film.savedFilm)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
+        tasteStore.profile = TasteProfile()
+        viewModel.reset()
+
+        router.tab = .myList
+        dismiss()
     }
 
     private var closeButton: some View {

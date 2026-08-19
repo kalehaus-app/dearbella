@@ -203,3 +203,13 @@ struct RecommendationResult {
 struct TasteSummaryToolInput: Decodable {
     let summary: String
 }
+
+/// What `forYouDeck` asks Claude for: titles and years only, since everything
+/// a swipe card shows is then read from TMDB.
+struct ForYouToolInput: Decodable {
+    struct Film: Decodable {
+        let title: String
+        let year: Int?
+    }
+    let films: [Film]
+}

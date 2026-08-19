@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Coordinates the onboarding screens in order:
-/// splash → genres → top 5 films → directors → "Great picks!".
+/// splash → genres → directors → top 5 films → "Great picks!".
 ///
 /// No tour. Three slides explaining what the app does is time spent before
 /// anyone has seen it, and the picks themselves teach the app better than a
@@ -17,7 +17,7 @@ struct OnboardingFlowView: View {
     @State private var step: Step = .splash
 
     private enum Step {
-        case splash, genres, films, directors, greatPicks
+        case splash, genres, directors, films, greatPicks
     }
 
     var body: some View {
@@ -36,11 +36,11 @@ struct OnboardingFlowView: View {
             SplashView()
                 .task { await advanceFromSplash() }
         case .genres:
-            GenreSelectionView { go(to: .films) }
-        case .films:
-            FilmSelectionView { go(to: .directors) }
+            GenreSelectionView { go(to: .directors) }
         case .directors:
-            DirectorSelectionView { go(to: .greatPicks) }
+            DirectorSelectionView { go(to: .films) }
+        case .films:
+            FilmSelectionView { go(to: .greatPicks) }
         case .greatPicks:
             GreatPicksView { store.completeOnboarding() }
         }
