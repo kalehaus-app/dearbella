@@ -1,7 +1,12 @@
 import SwiftUI
 
 /// Coordinates the onboarding screens in order:
-/// splash → intro carousel → genres → top 5 films → "Great picks!".
+/// splash → genres → top 5 films → "Great picks!".
+///
+/// No tour. Three slides explaining what the app does is time spent before
+/// anyone has seen it, and the picks themselves teach the app better than a
+/// carousel describing it — by the end of them Bella has a taste profile,
+/// which a tour would never have produced.
 ///
 /// It holds the current `step` and swaps screens with a cross-fade. The splash
 /// auto-advances after a short delay; every other step advances when its
@@ -12,7 +17,7 @@ struct OnboardingFlowView: View {
     @State private var step: Step = .splash
 
     private enum Step {
-        case splash, intro, genres, films, greatPicks
+        case splash, genres, films, greatPicks
     }
 
     var body: some View {
@@ -30,8 +35,6 @@ struct OnboardingFlowView: View {
         case .splash:
             SplashView()
                 .task { await advanceFromSplash() }
-        case .intro:
-            IntroCarouselView { go(to: .genres) }
         case .genres:
             GenreSelectionView { go(to: .films) }
         case .films:
@@ -49,7 +52,7 @@ struct OnboardingFlowView: View {
 
     private func advanceFromSplash() async {
         try? await Task.sleep(nanoseconds: 1_600_000_000)
-        go(to: .intro)
+        go(to: .genres)
     }
 }
 
