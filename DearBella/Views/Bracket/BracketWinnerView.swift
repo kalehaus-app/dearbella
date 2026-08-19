@@ -77,30 +77,17 @@ struct BracketWinnerView: View {
                 watchlist.save(winner.savedFilm)
             } label: {
                 Label(saved ? "Saved to My List" : "Save to My List", systemImage: saved ? "checkmark" : "plus")
-                    .font(.dearBellaButton)
-                    .foregroundStyle(Theme.ink)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Theme.cyan)
-                    .clipShape(Capsule())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pill(.primary))
             .disabled(saved)
-            .opacity(saved ? 0.7 : 1)
+            .opacity(saved ? 0.6 : 1)
 
             Button {
                 viewModel.reset()
             } label: {
                 Text("Start Over")
-                    .font(.dearBellaButton)
-                    .foregroundStyle(Theme.cream)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.white.opacity(0.08))
-                    .clipShape(Capsule())
-                    .overlay(Capsule().stroke(Theme.cream.opacity(0.25), lineWidth: 1))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pill(.secondary))
         }
     }
 }

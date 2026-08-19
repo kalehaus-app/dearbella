@@ -198,14 +198,9 @@ struct FindSomethingView: View {
                     Text("Find me something")
                 }
             }
-            .font(.dearBellaButton)
-            .foregroundStyle(Theme.ink)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 15)
-            .background(tasteStore.profile.isUsable ? Theme.cyan : Theme.cyan.opacity(0.35))
-            .clipShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pill(.primary))
+        .opacity(tasteStore.profile.isUsable ? 1 : 0.4)
         .disabled(!tasteStore.profile.isUsable || viewModel.isThinking)
     }
 
@@ -261,25 +256,15 @@ struct FindSomethingView: View {
                     saved ? "In your list" : "Add to my list",
                     systemImage: saved ? "checkmark" : "plus"
                 )
-                .font(.dearBellaButton)
-                .foregroundStyle(Theme.ink)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 13)
-                .background(Theme.cyan)
-                .clipShape(Capsule())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pill(.primary))
+            .opacity(saved ? 0.6 : 1)
             .disabled(saved)
 
             Link(destination: WatchlistStore.watchURL(for: film.savedFilm)) {
                 Label("Where to watch", systemImage: "play.rectangle")
-                    .font(.inter(15, weight: .medium))
-                    .foregroundStyle(Theme.cream)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color.white.opacity(0.07))
-                    .clipShape(Capsule())
             }
+            .buttonStyle(.pill(.secondary))
 
             Button {
                 Task {
@@ -288,12 +273,8 @@ struct FindSomethingView: View {
                 }
             } label: {
                 Text("Not this one — try again")
-                    .font(.inter(15, weight: .medium))
-                    .foregroundStyle(Theme.cream.opacity(0.7))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 11)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pill(.tertiary))
         }
         .padding(.horizontal, 12)
     }

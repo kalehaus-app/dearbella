@@ -199,13 +199,8 @@ struct FilmDetailSheet: View {
 
             Link(destination: WatchlistStore.watchURL(for: film)) {
                 Label("Where to watch", systemImage: "play.rectangle.fill")
-                    .font(.dearBellaButton)
-                    .foregroundStyle(Theme.ink)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Theme.cyan)
-                    .clipShape(Capsule())
             }
+            .buttonStyle(.pill(.primary))
 
             Button(role: .destructive) {
                 showRemoveConfirm = true

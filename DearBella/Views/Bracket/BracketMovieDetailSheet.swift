@@ -81,13 +81,7 @@ struct BracketMovieDetailSheet: View {
     private var chooseButton: some View {
         Button { onChoose() } label: {
             Text("Choose this one")
-                .font(.dearBellaButton)
-                .foregroundStyle(Theme.ink)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Theme.cyan)
-                .clipShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pill(.primary))
     }
 }

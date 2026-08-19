@@ -239,27 +239,16 @@ private struct MatchedFilmView: View {
                 VStack(spacing: 8) {
                     Link(destination: WatchlistStore.watchURL(for: film)) {
                         Label("Where to watch", systemImage: "play.rectangle.fill")
-                            .font(.dearBellaButton)
-                            .foregroundStyle(Theme.ink)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 13)
-                            .background(Theme.cyan)
-                            .clipShape(Capsule())
                     }
+                    .buttonStyle(.pill(.primary))
 
                     Button {
                         watchlist.setStatus(.watched, for: film.id)
                         onDone()
                     } label: {
                         Text("I watched it")
-                            .font(.inter(15, weight: .medium))
-                            .foregroundStyle(Theme.cream.opacity(0.75))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 11)
-                            .background(Color.white.opacity(0.06))
-                            .clipShape(Capsule())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pill(.secondary))
                 }
                 .padding(.horizontal, 12)
                 .padding(.top, 4)

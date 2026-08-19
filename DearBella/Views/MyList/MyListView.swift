@@ -160,14 +160,8 @@ struct MyListView: View {
         if candidates.count >= 2 {
             Button { showMatch = true } label: {
                 Label("Pick a movie", systemImage: "sparkles")
-                    .font(.dearBellaButton)
-                    .foregroundStyle(Theme.ink)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Theme.cyan)
-                    .clipShape(Capsule())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pill(.primary))
             .padding(.horizontal, 20)
         }
     }
@@ -176,15 +170,8 @@ struct MyListView: View {
     private var shareButton: some View {
         Button { showShareCard = true } label: {
             Label("Share my month", systemImage: "square.and.arrow.up")
-                .font(.inter(15, weight: .semibold))
-                .foregroundStyle(Theme.cream)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(Color.white.opacity(0.07))
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(Theme.cream.opacity(0.18), lineWidth: 1))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pill(.secondary))
         .padding(.horizontal, 20)
     }
 

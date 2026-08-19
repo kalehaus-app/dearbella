@@ -18,14 +18,8 @@ struct HideFilmButton: View {
             confirming = true
         } label: {
             Label(label, systemImage: "eye.slash")
-                .font(.inter(15, weight: .medium))
-                .foregroundStyle(Theme.cream.opacity(0.75))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(Color.white.opacity(0.06))
-                .clipShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.pill(.secondary))
         .confirmationDialog(
             "Stop suggesting \(title)?",
             isPresented: $confirming,

@@ -66,6 +66,9 @@ extension Font {
     /// Small supporting text — captions, metadata. (Inter, small)
     static let dearBellaCaption = Font.inter(13, weight: .regular, relativeTo: .caption)
 
-    /// Button / pill labels. (Inter, semibold)
-    static let dearBellaButton = Font.inter(17, weight: .semibold, relativeTo: .body)
+    /// Button / pill labels. (Inter, bold)
+    ///
+    /// Bold rather than semibold: a button is a thing you press, and the label
+    /// should look like it knows that.
+    static let dearBellaButton = Font.inter(16, weight: .bold, relativeTo: .body)
 }

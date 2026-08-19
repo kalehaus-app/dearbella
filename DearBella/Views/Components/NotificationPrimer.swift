@@ -64,14 +64,8 @@ struct NotificationPrimer: View {
                         Text("Remind me")
                     }
                 }
-                .font(.dearBellaButton)
-                .foregroundStyle(Theme.ink)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Theme.cyan)
-                .clipShape(Capsule())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pill(.primary))
             .disabled(isRequesting)
 
             Button {
@@ -79,12 +73,8 @@ struct NotificationPrimer: View {
                 finish()
             } label: {
                 Text("No thanks")
-                    .font(.inter(15, weight: .medium))
-                    .foregroundStyle(Theme.cream.opacity(0.6))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pill(.tertiary))
             .disabled(isRequesting)
         }
     }
