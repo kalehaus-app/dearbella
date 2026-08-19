@@ -8,7 +8,9 @@ struct AboutView: View {
     @EnvironmentObject private var hidden: HiddenFilmsStore
     @EnvironmentObject private var notifications: NotificationService
     @EnvironmentObject private var watchlist: WatchlistStore
+    @EnvironmentObject private var onboarding: OnboardingStore
     @State private var showClearConfirm = false
+    @State private var showRedoConfirm = false
 
     private let privacyURL = URL(string: "https://dearbella-site.vercel.app")!
 
@@ -33,6 +35,8 @@ struct AboutView: View {
                     remindersSection
                     Divider().background(Theme.cream.opacity(0.12))
                     hiddenFilmsSection
+                    Divider().background(Theme.cream.opacity(0.12))
+                    tastePicksSection
                     Divider().background(Theme.cream.opacity(0.12))
                     clearListSection
                     Divider().background(Theme.cream.opacity(0.12))
@@ -152,6 +156,47 @@ struct AboutView: View {
         }
     }
 
+    /// Taste changes, and the genres and five films someone chose on day one
+    /// stop describing them. This runs those two screens again without
+    /// touching anything they've saved since.
+    private var tastePicksSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                showRedoConfirm = true
+            } label: {
+                HStack {
+                    Text("Redo my taste picks")
+                        .font(.dearBellaBody)
+                        .foregroundStyle(Theme.cream)
+                    Spacer()
+                    Image(systemName: "arrow.clockwise")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.cyan)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Text("Choose your genres and top five films again. Your list, ratings and notes stay exactly as they are.")
+                .font(.dearBellaCaption)
+                .foregroundStyle(Theme.cream.opacity(0.5))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .confirmationDialog(
+            "Redo your taste picks?",
+            isPresented: $showRedoConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Start again") {
+                dismiss()
+                onboarding.resetOnboarding()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("You'll go back through choosing genres and your top five. Nothing in your list is affected.")
+        }
+    }
+
     /// A way to start over. Hidden when the list is already empty, so it isn't
     /// a permanently armed destructive button on a settings screen.
     @ViewBuilder
@@ -252,4 +297,5 @@ struct AboutView: View {
         .environmentObject(HiddenFilmsStore.shared)
         .environmentObject(NotificationService.shared)
         .environmentObject(WatchlistStore())
+        .environmentObject(OnboardingStore())
 }
