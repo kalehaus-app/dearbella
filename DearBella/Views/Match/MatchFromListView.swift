@@ -80,7 +80,7 @@ struct MatchFromListView: View {
                 .font(.dmSerif(24))
                 .foregroundStyle(Theme.cream)
                 .multilineTextAlignment(.center)
-            Text("First one you like is your match")
+            Text("Swipe left to skip, right to pick it")
                 .font(.dearBellaCaption)
                 .foregroundStyle(Theme.cream.opacity(0.5))
         }
@@ -112,28 +112,43 @@ struct MatchFromListView: View {
         .clipShape(RoundedRectangle(cornerRadius: Theme.cardCornerRadius))
     }
 
+    /// Labelled, because two bare circles are a guess. A heart on a screen
+    /// full of films you already liked enough to save doesn't obviously mean
+    /// "this is the one tonight" — a tick and the words do.
     private var buttons: some View {
         HStack(spacing: 40) {
-            circle(systemName: "xmark", color: Theme.cream.opacity(0.7)) {
+            circle(systemName: "xmark", label: "Not tonight", color: Theme.cream.opacity(0.7)) {
                 if let top = remaining.first { fly(top, keep: false) }
             }
-            circle(systemName: "heart.fill", color: Theme.highlight) {
+            circle(systemName: "checkmark", label: "That's the one", color: Theme.highlight) {
                 if let top = remaining.first { fly(top, keep: true) }
             }
         }
     }
 
-    private func circle(systemName: String, color: Color, action: @escaping () -> Void) -> some View {
+    private func circle(
+        systemName: String,
+        label: String,
+        color: Color,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
-            Image(systemName: systemName)
-                .font(.title2.weight(.semibold))
-                .foregroundStyle(color)
-                .frame(width: 64, height: 64)
-                .background(Color.white.opacity(0.06))
-                .clipShape(Circle())
-                .overlay(Circle().stroke(color.opacity(0.4), lineWidth: 1))
+            VStack(spacing: 7) {
+                Image(systemName: systemName)
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(color)
+                    .frame(width: 64, height: 64)
+                    .background(Color.white.opacity(0.06))
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(color.opacity(0.4), lineWidth: 1))
+
+                Text(label)
+                    .font(.inter(11, weight: .medium))
+                    .foregroundStyle(Theme.cream.opacity(0.55))
+            }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(label)
     }
 
     private var closeButton: some View {
@@ -172,7 +187,10 @@ struct MatchFromListView: View {
 
     private func gesture(for film: SavedFilm) -> some Gesture {
         DragGesture()
-            .onChanged { drag = $0.translation }
+            // Horizontal only. Tracking the vertical translation let the card
+            // be dragged up and down to no effect, which reads as a gesture
+            // the screen is ignoring rather than one it doesn't have.
+            .onChanged { drag = CGSize(width: $0.translation.width, height: 0) }
             .onEnded { value in
                 if value.translation.width > swipeThreshold {
                     fly(film, keep: true)
@@ -249,6 +267,14 @@ private struct MatchedFilmView: View {
                         Text("I watched it")
                     }
                     .buttonStyle(.pill(.secondary))
+
+                    // An explicit way out. Deciding is the whole errand, so
+                    // once it's decided the screen shouldn't need an X in the
+                    // corner to be escaped from.
+                    Button(action: onDone) {
+                        Text("Back to my list")
+                    }
+                    .buttonStyle(.pill(.tertiary))
                 }
                 .padding(.horizontal, 12)
                 .padding(.top, 4)

@@ -201,20 +201,22 @@ struct HomeView: View {
     /// Looks like a field and behaves like one — tapping opens the real thing
     /// with the keyboard already up. A live text field here would mean two
     /// places holding the same answer.
+    ///
+    /// It always shows the invitation, never the last thing that was asked.
+    /// Echoing a stored request back in full-strength text made the bar read
+    /// as a search box someone had typed in and failed to clear — a job to
+    /// finish rather than a question to answer. The request itself is still
+    /// there as removable chips inside, which is where it can be acted on.
     private var askField: some View {
         Button { showFindSomething = true } label: {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Theme.highlight)
+                    .foregroundStyle(Theme.cream.opacity(0.42))
 
-                Text(tasteStore.profile.isUsable
-                     ? tasteStore.profile.summary
-                     : "Name a film, director, or a feeling…")
+                Text("Name a film, director, or a feeling…")
                     .font(.inter(15))
-                    .foregroundStyle(tasteStore.profile.isUsable
-                                     ? Theme.cream
-                                     : Theme.cream.opacity(0.42))
+                    .foregroundStyle(Theme.cream.opacity(0.42))
                     .lineLimit(1)
 
                 Spacer(minLength: 0)
