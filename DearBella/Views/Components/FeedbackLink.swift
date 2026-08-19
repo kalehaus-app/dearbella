@@ -16,7 +16,7 @@ struct FeedbackLink: View {
                 VStack(spacing: 4) {
                     Text("Tell us what to build next")
                         .font(.inter(14, weight: .semibold))
-                        .foregroundStyle(Theme.cyan)
+                        .foregroundStyle(Theme.highlight)
                     Text("Two minutes, and it genuinely shapes what gets built.")
                         .font(.dearBellaCaption)
                         .foregroundStyle(Theme.cream.opacity(0.5))

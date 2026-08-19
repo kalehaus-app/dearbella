@@ -28,7 +28,7 @@ struct BracketView: View {
 
     private var loadingState: some View {
         VStack(spacing: 12) {
-            ProgressView().tint(Theme.cyan)
+            ProgressView().tint(Theme.highlight)
             Text("Building your bracket…")
                 .font(.dearBellaBody)
                 .foregroundStyle(Theme.cream.opacity(0.7))
@@ -53,7 +53,7 @@ struct BracketView: View {
                     .foregroundStyle(Theme.ink)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
-                    .background(Theme.cyan)
+                    .background(Theme.highlight)
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)

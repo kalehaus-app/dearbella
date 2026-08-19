@@ -57,7 +57,7 @@ struct BracketWinnerView: View {
     private var bellaLine: some View {
         if viewModel.isLoadingBlurb {
             HStack(spacing: 8) {
-                ProgressView().tint(Theme.cyan)
+                ProgressView().tint(Theme.highlight)
                 Text("Bella's weighing in…")
                     .font(.dearBellaCaption)
                     .foregroundStyle(Theme.cream.opacity(0.7))
@@ -65,7 +65,7 @@ struct BracketWinnerView: View {
         } else if let blurb = viewModel.bellaBlurb {
             Text(blurb)
                 .font(.inter(16, weight: .medium))
-                .foregroundStyle(Theme.cyan)
+                .foregroundStyle(Theme.highlight)
                 .multilineTextAlignment(.center)
         }
     }

@@ -132,7 +132,7 @@ struct MyListView: View {
                     .foregroundStyle(isSelected ? Theme.ink : Theme.cream)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 9)
-                    .background(isSelected ? Theme.cyan : Color.white.opacity(0.06))
+                    .background(isSelected ? Theme.highlight : Color.white.opacity(0.06))
                     .clipShape(Capsule())
                     .overlay(
                         Capsule().stroke(

@@ -247,7 +247,7 @@ struct FindSomethingView: View {
                     .foregroundStyle(Theme.ink)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Theme.cyan)
+                    .background(Theme.highlight)
                     .clipShape(Capsule())
                     .padding(.top, 56)
 

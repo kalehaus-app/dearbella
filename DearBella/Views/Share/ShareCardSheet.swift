@@ -54,7 +54,7 @@ struct ShareCardSheet: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .frame(maxHeight: .infinity)
         } else {
-            ProgressView().tint(Theme.cyan)
+            ProgressView().tint(Theme.highlight)
                 .frame(maxHeight: .infinity)
         }
     }
@@ -72,7 +72,7 @@ struct ShareCardSheet: View {
                         .foregroundStyle(Theme.ink)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Theme.cyan)
+                        .background(Theme.highlight)
                         .clipShape(Capsule())
                 }
 

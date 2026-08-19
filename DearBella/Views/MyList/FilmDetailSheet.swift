@@ -53,7 +53,7 @@ struct FilmDetailSheet: View {
                         dismiss()
                     }
                     .font(.dearBellaButton)
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.highlight)
                 }
             }
         }
@@ -98,7 +98,7 @@ struct FilmDetailSheet: View {
                         systemImage: "checkmark.circle.fill"
                     )
                     .font(.inter(11, weight: .medium))
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.highlight)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -258,7 +258,7 @@ struct FilmDetailSheet: View {
                 }
                 Spacer()
             }
-            .foregroundStyle(isHidden ? Theme.cyan : Theme.cream.opacity(0.8))
+            .foregroundStyle(isHidden ? Theme.highlight : Theme.cream.opacity(0.8))
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity, alignment: .leading)

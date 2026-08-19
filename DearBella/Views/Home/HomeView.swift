@@ -113,7 +113,7 @@ struct HomeView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "rectangle.stack")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Theme.cyan)
+                        .foregroundStyle(Theme.highlight)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Start your list")
                             .font(.inter(15, weight: .semibold))
@@ -204,7 +204,7 @@ struct HomeView: View {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.highlight)
 
                 Text(tasteStore.profile.isUsable
                      ? tasteStore.profile.summary

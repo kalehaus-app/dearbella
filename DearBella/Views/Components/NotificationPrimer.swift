@@ -20,7 +20,7 @@ struct NotificationPrimer: View {
             VStack(spacing: 18) {
                 Image(systemName: "bell.badge.fill")
                     .font(.system(size: 34))
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.highlight)
 
                 Text("Want this every Friday?")
                     .font(.dmSerif(28))

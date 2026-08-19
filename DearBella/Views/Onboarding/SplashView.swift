@@ -47,7 +47,7 @@ struct SplashView: View {
                     .foregroundStyle(Theme.cream)
                 Text("What should I watch tonight?")
                     .font(.dearBellaBody)
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.cream.opacity(0.55))
             }
         }
     }

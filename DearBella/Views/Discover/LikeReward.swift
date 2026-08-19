@@ -9,7 +9,7 @@ struct LikeReward: View {
             .foregroundStyle(Theme.ink)
             .padding(.horizontal, 18)
             .padding(.vertical, 12)
-            .background(Theme.cyan)
+            .background(Theme.highlight)
             .clipShape(Capsule())
             .shadow(color: .black.opacity(0.4), radius: 10, y: 4)
     }

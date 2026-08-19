@@ -47,7 +47,7 @@ struct BellaPickCard: View {
         HStack {
             Text("TODAY · BELLA'S PICK")
                 .font(.inter(12, weight: .semibold))
-                .foregroundStyle(Theme.cyan)
+                .foregroundStyle(Theme.highlight)
             Spacer()
             if streak.count > 0 {
                 Text("🔥 \(streak.count) day streak")
@@ -65,7 +65,7 @@ struct BellaPickCard: View {
             pickContent(pick)
         } else if viewModel.isLoading {
             HStack(spacing: 8) {
-                ProgressView().tint(Theme.cyan)
+                ProgressView().tint(Theme.highlight)
                 Text("Bella's choosing tonight's pick…")
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream.opacity(0.7))
@@ -129,7 +129,7 @@ struct BellaPickCard: View {
                 .foregroundStyle(Theme.ink)
                 .padding(.horizontal, 18)
                 .padding(.vertical, 10)
-                .background(Theme.cyan)
+                .background(Theme.highlight)
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)

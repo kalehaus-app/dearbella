@@ -28,7 +28,7 @@ struct GenreFilterPills: View {
                 .foregroundStyle(isSelected ? Theme.ink : Theme.cream)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
-                .background(isSelected ? Theme.cyan : Color.white.opacity(0.06))
+                .background(isSelected ? Theme.highlight : Color.white.opacity(0.06))
                 .clipShape(Capsule())
                 .overlay(
                     Capsule().stroke(

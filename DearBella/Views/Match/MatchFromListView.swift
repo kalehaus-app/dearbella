@@ -117,7 +117,7 @@ struct MatchFromListView: View {
             circle(systemName: "xmark", color: Theme.cream.opacity(0.7)) {
                 if let top = remaining.first { fly(top, keep: false) }
             }
-            circle(systemName: "heart.fill", color: Theme.cyan) {
+            circle(systemName: "heart.fill", color: Theme.highlight) {
                 if let top = remaining.first { fly(top, keep: true) }
             }
         }
@@ -217,7 +217,7 @@ private struct MatchedFilmView: View {
                     .foregroundStyle(Theme.ink)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Theme.cyan)
+                    .background(Theme.highlight)
                     .clipShape(Capsule())
                     .padding(.top, 52)
 

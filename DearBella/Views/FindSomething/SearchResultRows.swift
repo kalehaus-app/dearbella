@@ -76,7 +76,7 @@ struct PersonResultRow: View {
                             .background(Color.white.opacity(0.07))
                             .clipShape(Capsule())
                             .overlay(
-                                Capsule().stroke(Theme.cyan.opacity(0.3), lineWidth: 1)
+                                Capsule().stroke(Theme.highlight.opacity(0.3), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)

@@ -36,7 +36,7 @@ struct MovieDetailView: View {
                                 .foregroundStyle(Theme.ink)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
-                                .background(Theme.cyan)
+                                .background(Theme.highlight)
                                 .clipShape(Capsule())
                         }
                         Text(metaLine)
@@ -81,7 +81,7 @@ struct MovieDetailView: View {
                     .foregroundStyle(Theme.ink)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Theme.cyan)
+                    .background(Theme.highlight)
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -108,7 +108,7 @@ struct MovieDetailView: View {
         Button { dismiss() } label: {
             Image(systemName: "chevron.left")
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(Theme.cyan)
+                .foregroundStyle(Theme.highlight)
                 .padding(10)
                 .background(.black.opacity(0.4))
                 .clipShape(Circle())

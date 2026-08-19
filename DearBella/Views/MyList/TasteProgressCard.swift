@@ -26,7 +26,7 @@ struct TasteProgressCard: View {
             HStack(spacing: 8) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.highlight)
                 Text("Bella's read on you")
                     .font(.inter(11, weight: .semibold))
                     .foregroundStyle(Theme.textSecondary)
@@ -61,7 +61,7 @@ struct TasteProgressCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Theme.cyan.opacity(0.2), lineWidth: 1)
+                .stroke(Theme.highlight.opacity(0.2), lineWidth: 1)
         )
         .padding(.horizontal, 20)
     }
@@ -88,7 +88,7 @@ struct TasteProgressCard: View {
                         .foregroundStyle(Theme.ink)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
-                        .background(Theme.cyan)
+                        .background(Theme.highlight)
                         .clipShape(Capsule())
                 }
             }

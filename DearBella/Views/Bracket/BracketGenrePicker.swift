@@ -48,7 +48,7 @@ struct BracketGenrePicker: View {
         VStack(spacing: 10) {
             Image(systemName: Self.icon(for: name))
                 .font(.system(size: 26))
-                .foregroundStyle(Theme.cyan)
+                .foregroundStyle(Theme.highlight)
             Text(name)
                 .font(.inter(13, weight: .medium))
                 .foregroundStyle(Theme.cream)

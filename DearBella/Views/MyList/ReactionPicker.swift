@@ -29,7 +29,7 @@ struct ReactionPicker: View {
             .foregroundStyle(isSelected ? Theme.ink : Theme.cream)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
-            .background(isSelected ? Theme.cyan : Color.white.opacity(0.06))
+            .background(isSelected ? Theme.highlight : Color.white.opacity(0.06))
             .clipShape(Capsule())
             .overlay(
                 Capsule().stroke(
@@ -66,7 +66,7 @@ struct CompactReactionRow: View {
                         .foregroundStyle(isSelected ? Theme.ink : Theme.cream.opacity(0.7))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 7)
-                        .background(isSelected ? Theme.cyan : Color.white.opacity(0.07))
+                        .background(isSelected ? Theme.highlight : Color.white.opacity(0.07))
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)

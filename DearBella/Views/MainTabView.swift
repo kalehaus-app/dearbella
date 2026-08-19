@@ -31,7 +31,7 @@ struct MainTabView: View {
                 }
                 .tag(AppRouter.Tab.myList)
         }
-        .tint(Theme.cyan)
+        .tint(Theme.highlight)
         // A reminder promises tonight's pick, so it has to land on the tab
         // that shows it, whichever tab was open last.
         .onChange(of: notifications.didOpenFromReminder) { _, fromReminder in

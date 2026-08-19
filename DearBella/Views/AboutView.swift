@@ -88,7 +88,7 @@ struct AboutView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .tint(Theme.cyan)
+            .tint(Theme.highlight)
 
             if notifications.authorization == .denied {
                 Text("Notifications are turned off for Dear Bella in iOS Settings.")
@@ -129,7 +129,7 @@ struct AboutView: View {
                 if !hidden.isEmpty {
                     Button("Unhide all") { hidden.unhideAll() }
                         .font(.inter(13, weight: .medium))
-                        .foregroundStyle(Theme.cyan)
+                        .foregroundStyle(Theme.highlight)
                 }
             }
 
@@ -148,7 +148,7 @@ struct AboutView: View {
                         Spacer(minLength: 8)
                         Button("Unhide") { hidden.unhide(film) }
                             .font(.inter(13, weight: .semibold))
-                            .foregroundStyle(Theme.cyan)
+                            .foregroundStyle(Theme.highlight)
                     }
                     .padding(.vertical, 4)
                 }
@@ -171,7 +171,7 @@ struct AboutView: View {
                     Spacer()
                     Image(systemName: "arrow.clockwise")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.cyan)
+                        .foregroundStyle(Theme.highlight)
                 }
                 .contentShape(Rectangle())
             }
@@ -264,7 +264,7 @@ struct AboutView: View {
                         Spacer(minLength: 8)
                         Image(systemName: "arrow.up.right")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Theme.cyan)
+                            .foregroundStyle(Theme.highlight)
                     }
                     .padding(.vertical, 8)
                     .contentShape(Rectangle())
@@ -283,7 +283,7 @@ struct AboutView: View {
                 Spacer()
                 Image(systemName: "arrow.up.right")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.highlight)
             }
             .padding(.vertical, 8)
             .contentShape(Rectangle())

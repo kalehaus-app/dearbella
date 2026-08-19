@@ -30,7 +30,7 @@ struct FriendsTeaserCard: View {
             HStack(spacing: 10) {
                 Image(systemName: "person.2.fill")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.highlight)
                 Text("Watch with friends")
                     .font(.dmSerif(22, relativeTo: .title3))
                     .foregroundStyle(Theme.cream)
@@ -40,7 +40,7 @@ struct FriendsTeaserCard: View {
                     .foregroundStyle(Theme.ink)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Theme.cyan)
+                    .background(Theme.highlight)
                     .clipShape(Capsule())
             }
 
@@ -57,7 +57,7 @@ struct FriendsTeaserCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Theme.cyan.opacity(0.25), lineWidth: 1)
+                .stroke(Theme.highlight.opacity(0.25), lineWidth: 1)
         )
         .padding(.horizontal, 20)
     }
@@ -67,7 +67,7 @@ struct FriendsTeaserCard: View {
         if isOnWaitlist {
             Label("We'll let you know", systemImage: "checkmark.circle.fill")
                 .font(.inter(13, weight: .semibold))
-                .foregroundStyle(Theme.cyan)
+                .foregroundStyle(Theme.highlight)
                 .padding(.top, 2)
         } else {
             Button {
@@ -87,7 +87,7 @@ struct FriendsTeaserCard: View {
                     .foregroundStyle(Theme.ink)
                     .padding(.horizontal, 18)
                     .padding(.vertical, 9)
-                    .background(Theme.cyan)
+                    .background(Theme.highlight)
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)

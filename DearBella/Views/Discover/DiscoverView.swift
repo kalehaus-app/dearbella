@@ -44,7 +44,7 @@ struct DiscoverView: View {
     private var content: some View {
         if viewModel.isLoading {
             message {
-                ProgressView().tint(Theme.cyan)
+                ProgressView().tint(Theme.highlight)
                 Text("Loading films…")
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream.opacity(0.7))
@@ -64,7 +64,7 @@ struct DiscoverView: View {
             message {
                 Image(systemName: "checkmark.circle")
                     .font(.system(size: 44))
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.highlight)
                 Text(viewModel.filter == .newReleases
                      ? "You're caught up on new releases"
                      : "That's everything here for now")
@@ -140,7 +140,7 @@ struct DiscoverView: View {
                             .foregroundStyle(isSelected ? Theme.ink : Theme.cream)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
-                            .background(isSelected ? Theme.cyan : Color.white.opacity(0.07))
+                            .background(isSelected ? Theme.highlight : Color.white.opacity(0.07))
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -156,7 +156,7 @@ struct DiscoverView: View {
             circleButton(systemName: "xmark", color: Theme.cream.opacity(0.7)) {
                 if let top = viewModel.topMovie { fly(top, liked: false) }
             }
-            circleButton(systemName: "heart.fill", color: Theme.cyan) {
+            circleButton(systemName: "heart.fill", color: Theme.highlight) {
                 if let top = viewModel.topMovie { fly(top, liked: true) }
             }
         }

@@ -20,7 +20,7 @@ struct BracketMatchupView: View {
                 }
                 Text("VS")
                     .font(.dmSerif(22))
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.highlight)
                 if let right = viewModel.rightMovie {
                     posterChoice(right)
                 }

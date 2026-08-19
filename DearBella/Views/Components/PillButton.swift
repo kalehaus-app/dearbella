@@ -67,7 +67,7 @@ struct PillButtonStyle: ButtonStyle {
     @ViewBuilder
     private var background: some View {
         switch kind {
-        case .primary:   Theme.cyan
+        case .primary:   Theme.highlight
         case .secondary: Color.white.opacity(0.08)
         case .tertiary:  Color.clear
         }

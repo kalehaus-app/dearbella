@@ -19,7 +19,7 @@ struct RecommendationsSection: View {
                     .foregroundStyle(Theme.ink)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Theme.cyan)
+                    .background(Theme.highlight)
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -28,7 +28,7 @@ struct RecommendationsSection: View {
 
             if viewModel.isLoadingRecs {
                 HStack(spacing: 8) {
-                    ProgressView().tint(Theme.cyan)
+                    ProgressView().tint(Theme.highlight)
                     Text("Finding films you'll love…")
                         .font(.dearBellaCaption)
                         .foregroundStyle(Theme.cream.opacity(0.7))
@@ -79,7 +79,7 @@ struct RecommendationsSection: View {
                     .foregroundStyle(saved ? Theme.ink : Theme.cream)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(saved ? Theme.cyan : Color.white.opacity(0.08))
+                    .background(saved ? Theme.highlight : Color.white.opacity(0.08))
                     .clipShape(Capsule())
             }
             .buttonStyle(.plain)

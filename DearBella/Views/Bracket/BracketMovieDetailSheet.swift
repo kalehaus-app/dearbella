@@ -36,7 +36,7 @@ struct BracketMovieDetailSheet: View {
                             .foregroundStyle(Theme.ink)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
-                            .background(Theme.cyan)
+                            .background(Theme.highlight)
                             .clipShape(Capsule())
                     }
 

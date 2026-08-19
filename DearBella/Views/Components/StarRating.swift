@@ -23,7 +23,7 @@ struct StarRating: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: size, height: size)
-                    .foregroundStyle(rating == nil ? Theme.cream.opacity(0.28) : Theme.cyan)
+                    .foregroundStyle(rating == nil ? Theme.cream.opacity(0.28) : Theme.highlight)
             }
         }
         .frame(width: totalWidth, height: size)
@@ -74,7 +74,7 @@ struct RatingBadge: View {
                 if let reaction {
                     Image(systemName: reaction.symbol)
                         .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(reaction == .disliked ? Theme.cream.opacity(0.7) : Theme.cyan)
+                        .foregroundStyle(reaction == .disliked ? Theme.cream.opacity(0.7) : Theme.highlight)
                 }
                 if let rating {
                     Text(rating.formatted())
@@ -82,7 +82,7 @@ struct RatingBadge: View {
                         .foregroundStyle(Theme.cream)
                     Image(systemName: "star.fill")
                         .font(.system(size: 8))
-                        .foregroundStyle(Theme.cyan)
+                        .foregroundStyle(Theme.highlight)
                 }
             }
             .padding(.horizontal, 7)

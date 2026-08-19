@@ -22,7 +22,7 @@ struct TasteInsightSection: View {
                             .foregroundStyle(Theme.cream.opacity(0.6))
                         Image(systemName: "chevron.down")
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(Theme.cyan)
+                            .foregroundStyle(Theme.highlight)
                             .rotationEffect(.degrees(isExpanded ? 180 : 0))
                     }
                 }
@@ -36,7 +36,7 @@ struct TasteInsightSection: View {
                 }
             } else if viewModel.isLoadingSummary {
                 HStack(spacing: 8) {
-                    ProgressView().tint(Theme.cyan)
+                    ProgressView().tint(Theme.highlight)
                     Text("Reading your taste…")
                         .font(.dearBellaCaption)
                         .foregroundStyle(Theme.cream.opacity(0.7))
@@ -47,7 +47,7 @@ struct TasteInsightSection: View {
                 } label: {
                     Label("My taste", systemImage: "sparkles")
                         .font(.inter(14, weight: .semibold))
-                        .foregroundStyle(Theme.cyan)
+                        .foregroundStyle(Theme.highlight)
                 }
                 .buttonStyle(.plain)
             }

@@ -44,7 +44,7 @@ struct SwipeCardView: View {
                         .foregroundStyle(Theme.ink)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(Theme.cyan)
+                        .background(Theme.highlight)
                         .clipShape(Capsule())
                 }
                 Text(metaLine)
@@ -81,7 +81,7 @@ struct SwipeCardView: View {
 
     private var badges: some View {
         HStack {
-            badge(text: "LIKE", color: Theme.cyan, opacity: clamp(dragWidth / 100))
+            badge(text: "LIKE", color: Theme.highlight, opacity: clamp(dragWidth / 100))
             Spacer()
             badge(text: "PASS", color: Color(red: 1, green: 0.35, blue: 0.4), opacity: clamp(-dragWidth / 100))
         }

@@ -24,8 +24,14 @@ enum Theme {
     /// The signature DearBella red, taken from the splash "clapperboard".
     static let accent = Color(red: 0.95, green: 0.20, blue: 0.18)
 
-    /// Cyan accent (#6ADFFF) — selected tab + My List accents.
-    static let cyan = Color(red: 106 / 255, green: 223 / 255, blue: 255 / 255)
+    /// What marks a primary action or a selected state — pure white (#FFFFFF).
+    ///
+    /// Monochrome on purpose. The only colour on screen should be the film
+    /// art: posters are already loud and every one of them is a different
+    /// palette, so a bright interface colour competes with the content instead
+    /// of framing it. White also sits a shade brighter than the cream used for
+    /// body text, which is enough to read as interactive without adding a hue.
+    static let highlight = Color.white
 
     /// Cream (#F4EFE6) — primary text color in the new design system.
     static let cream = Color(red: 244 / 255, green: 239 / 255, blue: 230 / 255)
