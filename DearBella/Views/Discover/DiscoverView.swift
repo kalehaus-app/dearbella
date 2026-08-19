@@ -90,7 +90,7 @@ struct DiscoverView: View {
     private var content: some View {
         if viewModel.isLoading {
             message {
-                ProgressView().tint(Theme.highlight)
+                ProgressView().tint(viewModel.filter == .forYou ? Theme.sparkEnd : Theme.highlight)
                 Text(viewModel.filter == .forYou ? "Bella's picking for you…" : "Loading films…")
                     .font(.dearBellaBody)
                     .foregroundStyle(Theme.cream.opacity(0.7))
@@ -181,19 +181,53 @@ struct DiscoverView: View {
                     Button {
                         Task { await viewModel.apply(option) }
                     } label: {
-                        Text(option.title)
-                            .font(.inter(13, weight: .semibold))
-                            .foregroundStyle(isSelected ? Theme.ink : Theme.cream)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(isSelected ? Theme.highlight : Color.white.opacity(0.07))
-                            .clipShape(Capsule())
+                        if option == .forYou {
+                            sparkChip(isSelected: isSelected)
+                        } else {
+                            plainChip(option.title, isSelected: isSelected)
+                        }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(option.title)
                     .accessibilityAddTraits(isSelected ? [.isSelected] : [])
                 }
             }
             .padding(.horizontal, 20)
+        }
+    }
+
+    private func plainChip(_ title: String, isSelected: Bool) -> some View {
+        Text(title)
+            .font(.inter(13, weight: .semibold))
+            .foregroundStyle(isSelected ? Theme.ink : Theme.cream)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(isSelected ? Theme.highlight : Color.white.opacity(0.07))
+            .clipShape(Capsule())
+    }
+
+    /// The only coloured thing in Discover. Unselected it wears the gradient
+    /// as an outline and a sparkle, so it's visibly not another genre without
+    /// shouting over the deck; selected it fills, and the row reads as one
+    /// choice made rather than eight offered.
+    private func sparkChip(isSelected: Bool) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 11, weight: .bold))
+            Text("For you")
+                .font(.inter(13, weight: .bold))
+        }
+        .padding(.horizontal, 13)
+        .padding(.vertical, 8)
+        .foregroundStyle(isSelected ? AnyShapeStyle(Theme.ink) : AnyShapeStyle(Theme.spark))
+        .background {
+            if isSelected {
+                Capsule().fill(Theme.spark)
+            } else {
+                Capsule()
+                    .fill(Theme.sparkEnd.opacity(0.12))
+                    .overlay(Capsule().strokeBorder(Theme.spark, lineWidth: 1.2))
+            }
         }
     }
 

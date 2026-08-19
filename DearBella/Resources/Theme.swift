@@ -39,6 +39,29 @@ enum Theme {
     /// Near-black (#1A1A1A) — text on light/cyan fills.
     static let ink = Color(red: 26 / 255, green: 26 / 255, blue: 26 / 255)
 
+    // MARK: - Spark
+
+    /// The one place colour is allowed back in: the "For you" deck.
+    ///
+    /// Everything else stays monochrome so the posters carry the colour, and
+    /// that rule is what makes this work — a single warm gradient in a black
+    /// and white interface reads as "this one is different", which is exactly
+    /// what a personalized deck is. It would be noise if the filter row were
+    /// already six colours.
+    ///
+    /// Warm on purpose. Amber into coral is a cinema-marquee colour; a cool
+    /// one would read as system chrome rather than as this app.
+    static let sparkStart = Color(red: 255 / 255, green: 176 / 255, blue: 32 / 255)   // #FFB020
+    static let sparkEnd = Color(red: 255 / 255, green: 61 / 255, blue: 127 / 255)     // #FF3D7F
+
+    static var spark: LinearGradient {
+        LinearGradient(
+            colors: [sparkStart, sparkEnd],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
     // MARK: - Shape
 
     /// Standard corner radius for the rounded poster cards.
