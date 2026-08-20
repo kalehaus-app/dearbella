@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXFileReference section */
@@ -14,11 +14,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		100000000000000000000A6 /* DearBella */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DearBella;
-			sourceTree = "<group>";
-		};
+		100000000000000000000A6 /* DearBella */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DearBella; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,6 +37,14 @@
 			);
 			sourceTree = "<group>";
 		};
+		100000000000000000000A3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000A5 /* DearBella.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		100000000000000000000C3 /* Config */ = {
 			isa = PBXGroup;
 			children = (
@@ -49,14 +53,6 @@
 				100000000000000000000C2 /* Secrets.example.xcconfig */,
 			);
 			name = Config;
-			sourceTree = "<group>";
-		};
-		100000000000000000000A3 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				100000000000000000000A5 /* DearBella.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -264,9 +260,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2LFFK729NK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -287,9 +285,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2LFFK729NK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
